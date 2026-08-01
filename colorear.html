@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colorear - Plataforma Educativa</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #fef9f0; margin: 0; padding: 20px; }
+  h1 { color: #d35400; }
+  .volver { display: inline-block; margin-bottom: 15px; color: #d35400; text-decoration: none; font-weight: bold; }
+  #buscador { padding: 10px; width: 250px; border-radius: 8px; border: 2px solid #d35400; font-size: 16px; }
+  #buscarBtn { padding: 10px 15px; border-radius: 8px; border: none; background: #d35400; color: white; font-size: 16px; cursor: pointer; }
+  #paleta { margin: 15px 0; }
+  .color { width: 35px; height: 35px; display: inline-block; margin: 3px; border-radius: 50%; cursor: pointer; border: 2px solid #333; }
+  #lienzoContenedor { display: inline-block; border: 3px solid #333; border-radius: 10px; background: white; }
+  canvas { cursor: crosshair; max-width: 90vw; }
+  .accion { padding: 10px 18px; margin: 5px; border-radius: 8px; border: none; background: #27ae60; color: white; font-size: 15px; cursor: pointer; }
+  #estado { color: #888; margin-top: 10px; }
+  .subirLabel { display:inline-block; padding:10px 15px; background:#3498db; color:white; border-radius:8px; cursor:pointer; }
+  .tip { font-size: 13px; color: #888; max-width: 400px; margin: 8px auto; }
+  .enlaceHistorial { color: #d35400; font-weight: bold; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<a class="volver" href="index.html">← Volver al inicio</a>
+<h1>🎨 Colorea tu dibujo</h1>
+
+<input type="text" id="buscador" placeholder="Ej: gato, perro, sol...">
+<button id="buscarBtn">Generar</button>
+<p id="estado"></p>
+
+<div style="margin: 10px 0;">
+  <label for="subirArchivo" class="subirLabel">📤 Subir tu propia imagen</label>
+  <input type="file" id="subirArchivo" accept="image/*" style="display:none;">
+</div>
+<p class="tip">💡 Tip: puedes generar tu dibujo gratis en tu propia app de Gemini (pídele: "un [lo que quieras] para colorear, solo contorno, línea negra"), descargarlo, y luego subirlo aquí para colorearlo e imprimirlo.</p>
+<p><a class="enlaceHistorial" href="historial.html">🗂️ Ver mi historial</a></p>
+
+<div id="paleta"></div>
+
+<div id="lienzoContenedor">
+  <canvas id="lienzo" width="500" height="500"></canvas>
+</div>
+
+<br>
+<button class="accion" id="descargarBtn">⬇️ Descargar</button>
+<button class="accion" id="imprimirBtn">🖨️ Imprimir</button>
+<button class="accion" id="reiniciarBtn">↺ Reiniciar</button>
+<button class="accion" id="deshacerBtn" style="background:#e67e22;">↩️ Deshacer</button>
+<button class="accion" id="guardarBtn" style="background:#8e44ad;">💾 Guardar en mi historial</button>
+<button class="accion" id="compartirBtn" style="background:#16a085;">🌍 Compartir con la comunidad</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const canvas = document.getElementById('lienzo');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const estado = document.getElementById('estado');
+let colorActual = '#e74c3c';
+
+// Paleta de colores
+const colores = ['#e74c3c','#f1c40f','#2ecc71','#3498db','#9b59b6','#e67e22','#1abc9c','#34495e','#ecf0f1','#000000'];
+const paletaDiv = document.getElementById('paleta');
+colores.forEach(c => {
+  const btn = document.createElement('div');
+  btn.className = 'color';
+  btn.style.background = c;
+  btn.onclick = () => colorActual = c;
+  paletaDiv.appendChild(btn);
+});
+const colorLibre = document.createElement('input');
+colorLibre.type = 'color';
+colorLibre.value = '#e74c3c';
+colorLibre.style = 'width:35px;height:35px;border-radius:50%;border:2px solid #333;vertical-align:middle;margin-left:5px;';
+colorLibre.oninput = (e) => { colorActual = e.target.value; };
+paletaDiv.appendChild(colorLibre);
+
+// Supabase
+const supabaseUrl = 'https://pnjglzuxsyahxcbgjwvq.supabase.co';
+const supabaseKey = 'sb_publishable_f3roew_gvKiClDkdKYieYg_d0_7fWUk';
+const supa = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Cargar imagen: primero busca en el catálogo aprobado, si no, genera con Pollinations
+async function cargarImagen(prompt) {
+  estado.textContent = 'Buscando...';
+
+  const { data } = await supa
+    .from('imagenes_catalogo')
+    .select('url_imagen')
+    .ilike('palabra_clave', prompt)
+    .eq('estado', 'aprobado')
+    .limit(1);
+
+  if (data && data.length > 0) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      estado.textContent = '¡Listo! (del catálogo de la comunidad) Toca una zona para colorearla.';
+    };
+    img.src = data[0].url_imagen;
+    return;
+  }
+
+  const promptFinal = prompt + ', dibujo para colorear, solo contorno en línea negra, fondo blanco, sin sombras, estilo libro para colorear infantil';
+  const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(promptFinal) + '?width=500&height=500&nologo=true';
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    estado.textContent = '¡Listo! Toca una zona para colorearla.';
+  };
+  img.onerror = () => {
+    estado.textContent = 'No se pudo generar la imagen. Intenta otra palabra.';
+  };
+  img.src = url;
+}
+
+// Historial de deshacer
+let historialDeshacer = [];
+function guardarHistorial() {
+  historialDeshacer.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  if (historialDeshacer.length > 15) historialDeshacer.shift();
+}
+document.getElementById('deshacerBtn').onclick = () => {
+  if (historialDeshacer.length > 0) {
+    ctx.putImageData(historialDeshacer.pop(), 0, 0);
+  }
+};
+
+// Flood fill (relleno por clic)
+function colorearEn(x, y, colorRelleno) {
+  guardarHistorial();
+  const datos = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixeles = datos.data;
+  const ancho = canvas.width;
+
+  const hexANumeros = (hex) => {
+    const bigint = parseInt(hex.slice(1), 16);
+    return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255, 255];
+  };
+  const colorNuevo = hexANumeros(colorRelleno);
+  const posInicial = (y * ancho + x) * 4;
+  const colorOriginal = [pixeles[posInicial], pixeles[posInicial+1], pixeles[posInicial+2], pixeles[posInicial+3]];
+
+  const parecidos = (a,b) => Math.abs(a[0]-b[0])<40 && Math.abs(a[1]-b[1])<40 && Math.abs(a[2]-b[2])<40;
+  if (parecidos(colorOriginal, colorNuevo)) return;
+
+  const pila = [[x,y]];
+  while (pila.length) {
+    const [px, py] = pila.pop();
+    if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) continue;
+    const pos = (py * ancho + px) * 4;
+    const colorActualPixel = [pixeles[pos], pixeles[pos+1], pixeles[pos+2], pixeles[pos+3]];
+    if (!parecidos(colorActualPixel, colorOriginal)) continue;
+
+    pixeles[pos] = colorNuevo[0];
+    pixeles[pos+1] = colorNuevo[1];
+    pixeles[pos+2] = colorNuevo[2];
+    pixeles[pos+3] = 255;
+
+    pila.push([px+1,py],[px-1,py],[px,py+1],[px,py-1]);
+  }
+  ctx.putImageData(datos, 0, 0);
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const escalaX = canvas.width / rect.width;
+  const escalaY = canvas.height / rect.height;
+  const x = Math.floor((e.clientX - rect.left) * escalaX);
+  const y = Math.floor((e.clientY - rect.top) * escalaY);
+  colorearEn(x, y, colorActual);
+});
+
+document.getElementById('buscarBtn').onclick = () => {
+  const valor = document.getElementById('buscador').value.trim();
+  if (valor) cargarImagen(valor);
+};
+
+// Subir imagen propia
+document.getElementById('subirArchivo').onchange = (e) => {
+  const archivo = e.target.files[0];
+  if (!archivo) return;
+  const lector = new FileReader();
+  lector.onload = (evento) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      estado.textContent = 'Imagen cargada. ¡Ya puedes colorearla!';
+    };
+    img.src = evento.target.result;
+  };
+  lector.readAsDataURL(archivo);
+};
+
+document.getElementById('descargarBtn').onclick = () => {
+  const link = document.createElement('a');
+  link.download = 'mi_dibujo_coloreado.png';
+  link.href = canvas.toDataURL();
+  link.click();
+};
+
+document.getElementById('imprimirBtn').onclick = () => {
+  const ventana = window.open('');
+  ventana.document.write('<img src="' + canvas.toDataURL() + '" style="width:100%">');
+  ventana.print();
+};
+
+document.getElementById('reiniciarBtn').onclick = () => {
+  const valor = document.getElementById('buscador').value.trim();
+  if (valor) cargarImagen(valor);
+};
+
+// Guardar en historial local del dispositivo
+document.getElementById('guardarBtn').onclick = () => {
+  const dataURL = canvas.toDataURL('image/jpeg', 0.7);
+  let historial = JSON.parse(localStorage.getItem('miHistorial') || '[]');
+  historial.unshift({ imagen: dataURL, fecha: new Date().toLocaleString('es-MX') });
+  if (historial.length > 20) historial.pop();
+  try {
+    localStorage.setItem('miHistorial', JSON.stringify(historial));
+    estado.textContent = '¡Guardado en tu historial! 🗂️';
+  } catch (err) {
+    estado.textContent = 'Tu historial está lleno. Borra alguno en "Mi historial" primero.';
+  }
+};
+
+// Compartir imagen al catálogo público (queda pendiente de revisión)
+document.getElementById('compartirBtn').onclick = async () => {
+  const palabra = document.getElementById('buscador').value.trim() || 'dibujo';
+  const dataURL = canvas.toDataURL('image/jpeg', 0.6);
+  estado.textContent = 'Enviando para revisión...';
+  const { error } = await supa.from('imagenes_catalogo').insert({
+    palabra_clave: palabra,
+    url_imagen: dataURL
+  });
+  estado.textContent = error ? 'No se pudo enviar, intenta de nuevo.' : '¡Enviado! Se publicará cuando sea revisado. 🌱';
+};
+
+// Imagen de bienvenida
+cargarImagen('gato');
+</script>
+
+</body>
+</html>
