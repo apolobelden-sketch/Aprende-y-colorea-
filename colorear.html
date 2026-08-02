@@ -13,7 +13,7 @@
   #paleta { margin: 15px 0; }
   .color { width: 35px; height: 35px; display: inline-block; margin: 3px; border-radius: 50%; cursor: pointer; border: 2px solid #333; }
   #lienzoContenedor { display: inline-block; border: 3px solid #333; border-radius: 10px; background: white; }
-  canvas { cursor: crosshair; max-width: 90vw; }
+  canvas { cursor: crosshair; max-width: 90vw; touch-action: none; }
   .accion { padding: 10px 18px; margin: 5px; border-radius: 8px; border: none; background: #27ae60; color: white; font-size: 15px; cursor: pointer; }
   #estado { color: #888; margin-top: 10px; }
   .subirLabel { display:inline-block; padding:10px 15px; background:#3498db; color:white; border-radius:8px; cursor:pointer; }
@@ -37,9 +37,29 @@
 <p class="tip">💡 Tip: puedes generar tu dibujo gratis en tu propia app de Gemini (pídele: "un [lo que quieras] para colorear, solo contorno, línea negra"), descargarlo, y luego subirlo aquí para colorearlo e imprimirlo.</p>
 <p><a class="enlaceHistorial" href="historial.html">🗂️ Ver mi historial</a></p>
 
+<div id="galeriaContenedor" style="max-width:500px; margin:15px auto;">
+  <div id="categorias" style="margin-bottom:10px;"></div>
+  <div id="miniaturas" style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px;"></div>
+</div>
+
+<div style="margin: 10px 0;">
+  <button class="accion" id="modoRellenarBtn" style="background:#d35400;">🪣 Rellenar</button>
+  <button class="accion" id="modoPincelBtn" style="background:#95a5a6;">🖌️ Pincel</button>
+  <button class="accion" id="modoBorradorBtn" style="background:#95a5a6;">🧹 Borrador</button>
+  <span id="grosorContenedor" style="display:none; margin-left:8px;">
+    <label style="font-size:13px; color:#888;">Grosor:</label>
+    <input type="range" id="grosorPincel" min="2" max="30" value="8" style="vertical-align:middle;">
+  </span>
+</div>
+
 <div id="paleta"></div>
 
-<div id="lienzoContenedor">
+<div>
+  <button class="accion" id="zoomMenosBtn" style="background:#34495e; padding:8px 14px;">🔍−</button>
+  <button class="accion" id="zoomMasBtn" style="background:#34495e; padding:8px 14px;">🔍+</button>
+</div>
+
+<div id="lienzoContenedor" style="max-width:90vw; max-height:65vh; overflow:auto;">
   <canvas id="lienzo" width="500" height="500"></canvas>
 </div>
 
@@ -80,9 +100,16 @@ const supabaseUrl = 'https://pnjglzuxsyahxcbgjwvq.supabase.co';
 const supabaseKey = 'sb_publishable_f3roew_gvKiClDkdKYieYg_d0_7fWUk';
 const supa = supabase.createClient(supabaseUrl, supabaseKey);
 
+// Copia de la imagen original (para que el borrador revele el dibujo, no pinte blanco)
+let datosOriginales = null;
+function guardarOriginal() {
+  datosOriginales = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
 // Cargar imagen: primero busca en el catálogo aprobado, si no, genera con Pollinations
 async function cargarImagen(prompt) {
   estado.textContent = 'Buscando...';
+  document.getElementById('buscador').value = prompt;
 
   const { data } = await supa
     .from('imagenes_catalogo')
@@ -96,6 +123,7 @@ async function cargarImagen(prompt) {
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      guardarOriginal();
       estado.textContent = '¡Listo! (del catálogo de la comunidad) Toca una zona para colorearla.';
     };
     img.src = data[0].url_imagen;
@@ -110,6 +138,7 @@ async function cargarImagen(prompt) {
   img.onload = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    guardarOriginal();
     estado.textContent = '¡Listo! Toca una zona para colorearla.';
   };
   img.onerror = () => {
@@ -166,14 +195,109 @@ function colorearEn(x, y, colorRelleno) {
   ctx.putImageData(datos, 0, 0);
 }
 
-canvas.addEventListener('click', (e) => {
+// Modo: 'rellenar', 'pincel' o 'borrador'
+let modo = 'rellenar';
+let dibujando = false;
+let ultimoPunto = null;
+
+document.getElementById('modoRellenarBtn').onclick = () => {
+  modo = 'rellenar';
+  document.getElementById('modoRellenarBtn').style.background = '#d35400';
+  document.getElementById('modoPincelBtn').style.background = '#95a5a6';
+  document.getElementById('modoBorradorBtn').style.background = '#95a5a6';
+  document.getElementById('grosorContenedor').style.display = 'none';
+};
+document.getElementById('modoPincelBtn').onclick = () => {
+  modo = 'pincel';
+  document.getElementById('modoPincelBtn').style.background = '#d35400';
+  document.getElementById('modoRellenarBtn').style.background = '#95a5a6';
+  document.getElementById('modoBorradorBtn').style.background = '#95a5a6';
+  document.getElementById('grosorContenedor').style.display = 'inline';
+};
+document.getElementById('modoBorradorBtn').onclick = () => {
+  modo = 'borrador';
+  document.getElementById('modoBorradorBtn').style.background = '#d35400';
+  document.getElementById('modoRellenarBtn').style.background = '#95a5a6';
+  document.getElementById('modoPincelBtn').style.background = '#95a5a6';
+  document.getElementById('grosorContenedor').style.display = 'inline';
+};
+
+function borrarEn(x, y, radio) {
+  if (!datosOriginales) return;
+  const r = Math.round(radio);
+  const x0 = Math.max(0, x - r);
+  const y0 = Math.max(0, y - r);
+  const x1 = Math.min(canvas.width, x + r);
+  const y1 = Math.min(canvas.height, y + r);
+  const actual = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let py = y0; py < y1; py++) {
+    for (let px = x0; px < x1; px++) {
+      if ((px - x) ** 2 + (py - y) ** 2 <= r * r) {
+        const i = (py * canvas.width + px) * 4;
+        actual.data[i] = datosOriginales.data[i];
+        actual.data[i+1] = datosOriginales.data[i+1];
+        actual.data[i+2] = datosOriginales.data[i+2];
+        actual.data[i+3] = datosOriginales.data[i+3];
+      }
+    }
+  }
+  ctx.putImageData(actual, 0, 0);
+}
+
+function obtenerPosicion(e) {
   const rect = canvas.getBoundingClientRect();
   const escalaX = canvas.width / rect.width;
   const escalaY = canvas.height / rect.height;
-  const x = Math.floor((e.clientX - rect.left) * escalaX);
-  const y = Math.floor((e.clientY - rect.top) * escalaY);
-  colorearEn(x, y, colorActual);
+  const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: Math.floor((clienteX - rect.left) * escalaX),
+    y: Math.floor((clienteY - rect.top) * escalaY)
+  };
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  const pos = obtenerPosicion(e);
+  if (modo === 'rellenar') {
+    colorearEn(pos.x, pos.y, colorActual);
+  } else if (modo === 'pincel') {
+    guardarHistorial();
+    dibujando = true;
+    ultimoPunto = pos;
+    const grosor = document.getElementById('grosorPincel').value;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, grosor / 2, 0, Math.PI * 2);
+    ctx.fillStyle = colorActual;
+    ctx.fill();
+  } else if (modo === 'borrador') {
+    guardarHistorial();
+    dibujando = true;
+    const grosor = document.getElementById('grosorPincel').value;
+    borrarEn(pos.x, pos.y, grosor / 2);
+  }
 });
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!dibujando) return;
+  const pos = obtenerPosicion(e);
+  const grosor = document.getElementById('grosorPincel').value;
+  if (modo === 'pincel') {
+    ctx.strokeStyle = colorActual;
+    ctx.lineWidth = grosor;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(ultimoPunto.x, ultimoPunto.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ultimoPunto = pos;
+  } else if (modo === 'borrador') {
+    borrarEn(pos.x, pos.y, grosor / 2);
+  }
+});
+
+canvas.addEventListener('pointerup', () => { dibujando = false; });
+canvas.addEventListener('pointerleave', () => { dibujando = false; });
 
 document.getElementById('buscarBtn').onclick = () => {
   const valor = document.getElementById('buscador').value.trim();
@@ -190,6 +314,7 @@ document.getElementById('subirArchivo').onchange = (e) => {
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      guardarOriginal();
       estado.textContent = 'Imagen cargada. ¡Ya puedes colorearla!';
     };
     img.src = evento.target.result;
@@ -240,6 +365,60 @@ document.getElementById('compartirBtn').onclick = async () => {
   });
   estado.textContent = error ? 'No se pudo enviar, intenta de nuevo.' : '¡Enviado! Se publicará cuando sea revisado. 🌱';
 };
+
+// Zoom
+let zoomNivel = 1;
+document.getElementById('zoomMasBtn').onclick = () => {
+  zoomNivel = Math.min(3, zoomNivel + 0.25);
+  canvas.style.width = (500 * zoomNivel) + 'px';
+  canvas.style.height = (500 * zoomNivel) + 'px';
+};
+document.getElementById('zoomMenosBtn').onclick = () => {
+  zoomNivel = Math.max(0.5, zoomNivel - 0.25);
+  canvas.style.width = (500 * zoomNivel) + 'px';
+  canvas.style.height = (500 * zoomNivel) + 'px';
+};
+
+// Galería de categorías
+const categoriasData = {
+  'Animales': ['gato','perro','león','elefante','pez','mariposa','conejo','pato'],
+  'Vehículos': ['carro','avión','barco','tren','bicicleta','camión'],
+  'Naturaleza': ['sol','árbol','flor','luna','estrella','nube'],
+  'Personajes': ['princesa','robot','dinosaurio','unicornio','superhéroe','sirena']
+};
+
+const categoriasDiv = document.getElementById('categorias');
+const miniaturasDiv = document.getElementById('miniaturas');
+
+function mostrarMiniaturas(categoria) {
+  miniaturasDiv.innerHTML = '';
+  categoriasData[categoria].forEach(palabra => {
+    const miniUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(palabra + ', dibujo para colorear, solo contorno en línea negra, fondo blanco, estilo libro para colorear infantil') + '?width=120&height=120&nologo=true';
+    const img = document.createElement('img');
+    img.src = miniUrl;
+    img.alt = palabra;
+    img.title = palabra;
+    img.style = 'width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid #ddd;';
+    img.onclick = () => cargarImagen(palabra);
+    miniaturasDiv.appendChild(img);
+  });
+}
+
+Object.keys(categoriasData).forEach((categoria, indice) => {
+  const btn = document.createElement('button');
+  btn.textContent = categoria;
+  btn.className = 'accion';
+  btn.style.background = indice === 0 ? '#d35400' : '#95a5a6';
+  btn.style.fontSize = '13px';
+  btn.style.padding = '8px 12px';
+  btn.onclick = () => {
+    document.querySelectorAll('#categorias button').forEach(b => b.style.background = '#95a5a6');
+    btn.style.background = '#d35400';
+    mostrarMiniaturas(categoria);
+  };
+  categoriasDiv.appendChild(btn);
+});
+mostrarMiniaturas(Object.keys(categoriasData)[0]);
 
 // Imagen de bienvenida
 cargarImagen('gato');
