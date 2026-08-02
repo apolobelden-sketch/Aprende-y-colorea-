@@ -70,6 +70,8 @@
 <button class="accion" id="deshacerBtn" style="background:#e67e22;">↩️ Deshacer</button>
 <button class="accion" id="guardarBtn" style="background:#8e44ad;">💾 Guardar en mi historial</button>
 <button class="accion" id="compartirBtn" style="background:#16a085;">🌍 Compartir con la comunidad</button>
+<br>
+<button id="activarAdminBtn" style="background:none; border:none; color:#aaa; font-size:12px; text-decoration:underline; cursor:pointer; margin-top:5px;">🔑 Soy el administrador</button>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -354,16 +356,36 @@ document.getElementById('guardarBtn').onclick = () => {
   }
 };
 
-// Compartir imagen al catálogo público (queda pendiente de revisión)
+// Compartir imagen al catálogo público
+// Tu clave de administrador (guárdala solo tú) hace que tus propias subidas se publiquen directo, sin revisión.
+// Cualquiera sin esta clave queda "pendiente" hasta que tú lo apruebes en Supabase.
+const CLAVE_ADMIN = 'aprendecolorea2026';
+
 document.getElementById('compartirBtn').onclick = async () => {
   const palabra = document.getElementById('buscador').value.trim() || 'dibujo';
   const dataURL = canvas.toDataURL('image/jpeg', 0.6);
-  estado.textContent = 'Enviando para revisión...';
-  const { error } = await supa.from('imagenes_catalogo').insert({
-    palabra_clave: palabra,
-    url_imagen: dataURL
+  let claveGuardada = localStorage.getItem('claveAdmin') || '';
+  estado.textContent = 'Enviando...';
+  const { error } = await supa.rpc('compartir_imagen', {
+    p_palabra_clave: palabra,
+    p_url_imagen: dataURL,
+    p_clave_admin: claveGuardada
   });
-  estado.textContent = error ? 'No se pudo enviar, intenta de nuevo.' : '¡Enviado! Se publicará cuando sea revisado. 🌱';
+  if (error) {
+    estado.textContent = 'No se pudo enviar, intenta de nuevo.';
+  } else if (claveGuardada === CLAVE_ADMIN) {
+    estado.textContent = '¡Publicado directo! 🌍';
+  } else {
+    estado.textContent = '¡Enviado! Se publicará cuando sea revisado. 🌱';
+  }
+};
+
+document.getElementById('activarAdminBtn').onclick = () => {
+  const clave = prompt('Escribe tu clave de administrador:');
+  if (clave) {
+    localStorage.setItem('claveAdmin', clave);
+    estado.textContent = clave === CLAVE_ADMIN ? 'Clave guardada. Tus subidas ahora se publican directo.' : 'Clave guardada (revisa que esté bien escrita).';
+  }
 };
 
 // Zoom
