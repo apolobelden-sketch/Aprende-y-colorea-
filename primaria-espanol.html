@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primaria - Español</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #fef9f0; margin: 0; padding: 20px; }
+  h1 { color: #d35400; }
+  .volver { display: inline-block; margin-bottom: 20px; color: #d35400; text-decoration: none; font-weight: bold; }
+  .pregunta { background: white; border: 2px solid #d35400; border-radius: 12px; padding: 25px; max-width: 500px; margin: 20px auto; }
+  .opcion { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid #ccc; background: white; font-size: 16px; cursor: pointer; }
+  .opcion:hover { border-color: #d35400; }
+  .correcta { background: #2ecc71 !important; color: white; border-color: #2ecc71 !important; }
+  .incorrecta { background: #e74c3c !important; color: white; border-color: #e74c3c !important; }
+  #puntaje { font-size: 18px; font-weight: bold; color: #d35400; }
+  #siguienteBtn { padding: 10px 20px; margin-top: 15px; border-radius: 8px; border: none; background: #27ae60; color: white; font-size: 15px; cursor: pointer; display: none; }
+</style>
+</head>
+<body>
+
+<a class="volver" href="../index.html">← Volver a materias</a>
+<h1>📝 Primaria — Español</h1>
+<p id="puntaje">Puntaje: 0 / 0</p>
+
+<div class="pregunta" id="areaPregunta"></div>
+
+<script>
+const preguntas = [
+  { texto: "¿Cuál palabra es un sustantivo?", opciones: ["Correr","Perro","Rápido"], correcta: 1 },
+  { texto: "¿Cuál palabra es un verbo?", opciones: ["Saltar","Mesa","Azul"], correcta: 0 },
+  { texto: "¿Cuál oración está bien escrita?", opciones: ["yo Como manzanas","Yo como manzanas.","yo como Manzanas"], correcta: 1 },
+  { texto: "¿Cuál es el plural de 'flor'?", opciones: ["Flores","Flors","Floras"], correcta: 0 },
+  { texto: "¿Cuál palabra lleva acento (tilde)?", opciones: ["Camion","Silla","Mesa"], correcta: 0 },
+  { texto: "¿Cuál es un sinónimo de 'feliz'?", opciones: ["Triste","Contento","Enojado"], correcta: 1 },
+  { texto: "¿Cuál es un antónimo de 'grande'?", opciones: ["Enorme","Gigante","Pequeño"], correcta: 2 }
+];
+
+let actual = 0;
+let correctas = 0;
+
+function mostrarPregunta() {
+  const p = preguntas[actual];
+  const area = document.getElementById('areaPregunta');
+  area.innerHTML = `
+    <p><strong>${p.texto}</strong></p>
+    ${p.opciones.map((op, i) => `<button class="opcion" onclick="responder(${i})">${op}</button>`).join('')}
+    <p id="resultado"></p>
+    <button id="siguienteBtn" onclick="siguientePregunta()">Siguiente →</button>
+  `;
+}
+
+function responder(indice) {
+  const p = preguntas[actual];
+  const botones = document.querySelectorAll('.opcion');
+  botones.forEach(b => b.disabled = true);
+  const esCorrecta = indice === p.correcta;
+  botones[indice].classList.add(esCorrecta ? 'correcta' : 'incorrecta');
+  if (!esCorrecta) botones[p.correcta].classList.add('correcta');
+  document.getElementById('resultado').textContent = esCorrecta ? '¡Correcto! 🎉' : 'Casi, revisa la respuesta correcta.';
+  if (esCorrecta) correctas++;
+  document.getElementById('puntaje').textContent = `Puntaje: ${correctas} / ${actual + 1}`;
+  document.getElementById('siguienteBtn').style.display = 'inline-block';
+}
+
+function siguientePregunta() {
+  actual++;
+  if (actual < preguntas.length) {
+    mostrarPregunta();
+  } else {
+    document.getElementById('areaPregunta').innerHTML = `<p><strong>¡Terminaste! 🏆</strong></p><p>Puntaje final: ${correctas} / ${preguntas.length}</p>`;
+  }
+}
+
+mostrarPregunta();
+</script>
+
+</body>
+</html>
