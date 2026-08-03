@@ -27,7 +27,7 @@
 <h1>🎨 Colorea tu dibujo</h1>
 
 <input type="text" id="buscador" placeholder="Ej: gato, perro, sol...">
-<button id="buscarBtn">Generar</button>
+<button id="buscarBtn">Buscar</button>
 <p id="estado"></p>
 
 <div style="margin: 10px 0;">
@@ -108,45 +108,98 @@ function guardarOriginal() {
   datosOriginales = ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
-// Cargar imagen: primero busca en el catálogo aprobado, si no, genera con Pollinations
-async function cargarImagen(prompt) {
-  estado.textContent = 'Buscando...';
-  document.getElementById('buscador').value = prompt;
+// Diccionario de sinónimos: diminutivos y traducciones inglés/español
+const diccionario = {
+  gato: ['gato','gatito','gata','cat','kitten','kitty'],
+  perro: ['perro','perrito','perra','dog','puppy','doggy'],
+  conejo: ['conejo','conejito','coneja','rabbit','bunny'],
+  pajaro: ['pájaro','pajaro','pajarito','ave','bird'],
+  tortuga: ['tortuga','tortuguita','turtle','tortoise'],
+  leon: ['león','leon','leoncito','lion'],
+  elefante: ['elefante','elefantito','elephant'],
+  pez: ['pez','pescado','peces','fish'],
+  mariposa: ['mariposa','butterfly'],
+  pato: ['pato','patito','pata','duck','duckling'],
+  carro: ['carro','coche','auto','carrito','car'],
+  avion: ['avión','avion','avioncito','plane','airplane'],
+  barco: ['barco','barquito','bote','boat','ship'],
+  tren: ['tren','trenecito','train'],
+  bicicleta: ['bicicleta','bici','bicycle','bike'],
+  camion: ['camión','camion','truck'],
+  sol: ['sol','solecito','sun'],
+  arbol: ['árbol','arbol','arbolito','tree'],
+  flor: ['flor','florecita','flower'],
+  luna: ['luna','lunita','moon'],
+  estrella: ['estrella','estrellita','star'],
+  nube: ['nube','nubecita','cloud'],
+  princesa: ['princesa','princess'],
+  robot: ['robot','robotcito'],
+  dinosaurio: ['dinosaurio','dino','dinosaur'],
+  unicornio: ['unicornio','unicorn'],
+  superheroe: ['superhéroe','superheroe','superhero'],
+  sirena: ['sirena','mermaid'],
+  dibujo: ['dibujo','drawing','dibujito']
+};
 
+function normalizarTexto(t) {
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+const indiceInverso = {};
+Object.keys(diccionario).forEach(canon => {
+  diccionario[canon].forEach(variante => { indiceInverso[normalizarTexto(variante)] = canon; });
+  indiceInverso[normalizarTexto(canon)] = canon;
+});
+
+function buscarInfoPalabra(texto) {
+  const limpio = normalizarTexto(texto);
+  const canon = indiceInverso[limpio];
+  if (canon) return { canon, variantes: diccionario[canon], conocida: true };
+  return { canon: limpio, variantes: [texto], conocida: false };
+}
+
+async function buscarEnCatalogo(texto) {
+  const info = buscarInfoPalabra(texto);
+  const orParts = info.conocida
+    ? info.variantes.map(v => `palabra_clave.ilike.${v}`)
+    : [`palabra_clave.ilike.%${texto}%`];
   const { data } = await supa
     .from('imagenes_catalogo')
     .select('url_imagen')
-    .ilike('palabra_clave', prompt)
     .eq('estado', 'aprobado')
+    .or(orParts.join(','))
     .limit(1);
+  return data && data.length > 0 ? data[0].url_imagen : null;
+}
 
-  if (data && data.length > 0) {
+// Cargar imagen: busca en el catálogo de la comunidad (ya no genera con IA)
+async function cargarImagen(prompt) {
+  document.getElementById('buscador').value = prompt;
+  estado.textContent = 'Buscando...';
+
+  const url = await buscarEnCatalogo(prompt);
+
+  if (url) {
     const img = new Image();
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       guardarOriginal();
-      estado.textContent = '¡Listo! (del catálogo de la comunidad) Toca una zona para colorearla.';
+      estado.textContent = '¡Listo! Toca una zona para colorearla.';
     };
-    img.src = data[0].url_imagen;
-    return;
-  }
-
-  const promptFinal = prompt + ', dibujo para colorear, solo contorno en línea negra, fondo blanco, sin sombras, estilo libro para colorear infantil';
-  const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(promptFinal) + '?width=500&height=500&nologo=true';
-
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
+    img.src = url;
+  } else {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    guardarOriginal();
-    estado.textContent = '¡Listo! Toca una zona para colorearla.';
-  };
-  img.onerror = () => {
-    estado.textContent = 'No se pudo generar la imagen. Intenta otra palabra.';
-  };
-  img.src = url;
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#bbb';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Aún no hay un dibujo de', canvas.width / 2, canvas.height / 2 - 15);
+    ctx.fillText('"' + prompt + '"', canvas.width / 2, canvas.height / 2 + 15);
+    datosOriginales = null;
+    estado.textContent = 'No encontramos ese dibujo todavía. ¡Sube el tuyo con el botón de arriba! 📤';
+  }
 }
 
 // Historial de deshacer
@@ -197,7 +250,7 @@ function colorearEn(x, y, colorRelleno) {
   ctx.putImageData(datos, 0, 0);
 }
 
-// Modo: 'rellenar', 'pincel' o 'borrador'
+// Modo: 'rellenar' o 'pincel'
 let modo = 'rellenar';
 let dibujando = false;
 let ultimoPunto = null;
@@ -362,7 +415,9 @@ document.getElementById('guardarBtn').onclick = () => {
 const CLAVE_ADMIN = 'aprendecolorea2026';
 
 document.getElementById('compartirBtn').onclick = async () => {
-  const palabra = document.getElementById('buscador').value.trim() || 'dibujo';
+  const palabraCruda = document.getElementById('buscador').value.trim() || 'dibujo';
+  const info = buscarInfoPalabra(palabraCruda);
+  const palabra = info.conocida ? info.canon : palabraCruda;
   const dataURL = canvas.toDataURL('image/jpeg', 0.6);
   let claveGuardada = localStorage.getItem('claveAdmin') || '';
   estado.textContent = 'Enviando...';
@@ -401,28 +456,40 @@ document.getElementById('zoomMenosBtn').onclick = () => {
   canvas.style.height = (500 * zoomNivel) + 'px';
 };
 
-// Galería de categorías
+// Galería de categorías (usa el catálogo real de la comunidad, ya no genera con IA)
 const categoriasData = {
-  'Animales': ['gato','perro','león','elefante','pez','mariposa','conejo','pato'],
-  'Vehículos': ['carro','avión','barco','tren','bicicleta','camión'],
-  'Naturaleza': ['sol','árbol','flor','luna','estrella','nube'],
-  'Personajes': ['princesa','robot','dinosaurio','unicornio','superhéroe','sirena']
+  'Animales': ['gato','perro','conejo','pajaro','tortuga','leon','elefante','pez','mariposa','pato'],
+  'Vehículos': ['carro','avion','barco','tren','bicicleta','camion'],
+  'Naturaleza': ['sol','arbol','flor','luna','estrella','nube'],
+  'Personajes': ['princesa','robot','dinosaurio','unicornio','superheroe','sirena']
 };
 
 const categoriasDiv = document.getElementById('categorias');
 const miniaturasDiv = document.getElementById('miniaturas');
 
-function mostrarMiniaturas(categoria) {
+async function mostrarMiniaturas(categoria) {
+  miniaturasDiv.innerHTML = '<p style="grid-column:1/-1; color:#aaa; font-size:13px;">Cargando...</p>';
+  const palabras = categoriasData[categoria];
+  const urls = await Promise.all(palabras.map(p => buscarEnCatalogo(p)));
   miniaturasDiv.innerHTML = '';
-  categoriasData[categoria].forEach(palabra => {
-    const miniUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(palabra + ', dibujo para colorear, solo contorno en línea negra, fondo blanco, estilo libro para colorear infantil') + '?width=120&height=120&nologo=true';
-    const img = document.createElement('img');
-    img.src = miniUrl;
-    img.alt = palabra;
-    img.title = palabra;
-    img.style = 'width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid #ddd;';
-    img.onclick = () => cargarImagen(palabra);
-    miniaturasDiv.appendChild(img);
+  palabras.forEach((palabra, i) => {
+    const etiqueta = diccionario[palabra] ? diccionario[palabra][0] : palabra;
+    if (urls[i]) {
+      const img = document.createElement('img');
+      img.src = urls[i];
+      img.alt = etiqueta;
+      img.title = etiqueta;
+      img.style = 'width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; cursor:pointer; border:2px solid #ddd;';
+      img.onclick = () => cargarImagen(palabra);
+      miniaturasDiv.appendChild(img);
+    } else {
+      const div = document.createElement('div');
+      div.textContent = etiqueta;
+      div.title = 'Aún no hay dibujo — toca para subir el tuyo';
+      div.style = 'width:100%; aspect-ratio:1; border-radius:8px; cursor:pointer; border:2div.style = 'width:100%; aspect-ratio:1; border-radius:8px; cursor:pointer; border:2px dashed #ccc; background:#fafafa; color:#bbb; font-size:12px; display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; box-sizing:border-box;';
+      div.onclick = () => cargarImagen(palabra);
+      miniaturasDiv.appendChild(div);
+    }
   });
 }
 
@@ -447,4 +514,4 @@ cargarImagen('gato');
 </script>
 
 </body>
-  </html>
+</html>
