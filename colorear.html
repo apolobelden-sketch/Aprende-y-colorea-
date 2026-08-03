@@ -486,7 +486,7 @@ async function mostrarMiniaturas(categoria) {
       const div = document.createElement('div');
       div.textContent = etiqueta;
       div.title = 'Aún no hay dibujo — toca para subir el tuyo';
-      div.style = 'width:100%; aspect-ratio:1; border-radius:8px; cursor:pointer; border:2div.style = 'width:100%; aspect-ratio:1; border-radius:8px; cursor:pointer; border:2px dashed #ccc; background:#fafafa; color:#bbb; font-size:12px; display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; box-sizing:border-box;';
+      div.style = 'width:100%; aspect-ratio:1; border-radius:8px; cursor:pointer; border:2px dashed #ccc; background:#fafafa; color:#bbb; font-size:12px; display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; box-sizing:border-box;';
       div.onclick = () => cargarImagen(palabra);
       miniaturasDiv.appendChild(div);
     }
