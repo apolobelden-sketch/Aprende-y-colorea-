@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Imprimir Español - Primaria</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #fef9f0; margin: 0; padding: 20px; }
+  h1 { color: #d35400; }
+  .volver { display: inline-block; margin-bottom: 15px; color: #d35400; text-decoration: none; font-weight: bold; }
+  select, button { padding: 10px 14px; border-radius: 8px; border: 2px solid #d35400; font-size: 15px; margin: 5px; }
+  button { background: #d35400; color: white; border: none; cursor: pointer; }
+  button.secundario { background: #27ae60; }
+  button.terciario { background: #8e44ad; }
+  #hoja { background: white; max-width: 650px; margin: 20px auto; padding: 25px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); text-align: left; }
+  #hoja h2 { text-align: center; color: #d35400; margin-top: 0; }
+  #hoja .datos { display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+  #hoja .instruccion { font-size: 13px; color: #888; margin-bottom: 12px; }
+  .problemas { display: flex; flex-direction: column; gap: 14px; }
+  .problema { font-size: 18px; border: 1px solid #ddd; border-radius: 8px; padding: 12px 15px; }
+  .problema .respuesta { color: #27ae60; font-weight: bold; display: none; }
+  .mostrar-respuestas .respuesta { display: inline; }
+  .mostrar-respuestas .linea { display: none; }
+  .linea { display: inline-block; border-bottom: 2px solid #333; width: 120px; margin-left: 8px; }
+  .aviso { font-size: 12px; color: #aaa; }
+  @media print {
+    .no-imprimir { display: none; }
+    body { background: white; padding: 0; }
+    #hoja { box-shadow: none; margin: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<a class="volver no-imprimir" href="index.html">← Volver a materias</a>
+<h1 class="no-imprimir">🖨️ Hojas de Español para Imprimir</h1>
+
+<div class="no-imprimir">
+  <label>Grado: </label>
+  <select id="grado">
+    <option value="1">1° Primaria</option>
+    <option value="2">2° Primaria</option>
+    <option value="3">3° Primaria</option>
+    <option value="4">4° Primaria</option>
+    <option value="5">5° Primaria</option>
+    <option value="6">6° Primaria</option>
+  </select>
+  <br>
+  <button id="generarBtn">🔄 Generar hoja nueva</button>
+  <button class="secundario" id="imprimirBtn">🖨️ Imprimir</button>
+  <button class="terciario" id="respuestasBtn">👁️ Ver respuestas</button>
+</div>
+
+<div id="hoja">
+  <h2>Hoja de Español — <span id="gradoTexto">1°</span> de Primaria</h2>
+  <div class="datos">
+    <span>Nombre: <span class="linea" style="width:150px;"></span></span>
+    <span>Fecha: <span class="linea" style="width:100px;"></span></span>
+  </div>
+  <p class="instruccion" id="instruccionTexto"></p>
+  <div class="problemas" id="problemas"></div>
+</div>
+<p class="aviso no-imprimir">* En ejercicios de sinónimos puede haber más de una respuesta correcta; la que se muestra es solo un ejemplo válido.</p>
+
+<script>
+const problemasDiv = document.getElementById('problemas');
+const gradoSelect = document.getElementById('grado');
+const hoja = document.getElementById('hoja');
+const instruccionTexto = document.getElementById('instruccionTexto');
+
+function mezclar(arr) {
+  const copia = [...arr];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+const bancos = {
+  '1': {
+    instruccion: 'Completa la vocal que falta en cada palabra.',
+    items: [
+      { texto: 'c_sa', resp: 'casa' }, { texto: 'p_lota', resp: 'pelota' },
+      { texto: 'l_bro', resp: 'libro' }, { texto: 's_l', resp: 'sol' },
+      { texto: 'm_no', resp: 'mano' }, { texto: 'p_to', resp: 'pato' },
+      { texto: 'g_to', resp: 'gato' }, { texto: 'l_na', resp: 'luna' },
+      { texto: 'r_sa', resp: 'rosa' }, { texto: 'v_ca', resp: 'vaca' },
+      { texto: 'p_pel', resp: 'papel' }, { texto: 'm_sa', resp: 'mesa' },
+      { texto: 'n_ño', resp: 'niño' }, { texto: 'p_n', resp: 'pan' },
+      { texto: 'f_ta', resp: 'foto' }, { texto: 'd_do', resp: 'dedo' }
+    ]
+  },
+  '2': {
+    instruccion: 'Escribe el plural de cada palabra.',
+    items: [
+      { texto: 'flor', resp: 'flores' }, { texto: 'pan', resp: 'panes' },
+      { texto: 'mesa', resp: 'mesas' }, { texto: 'árbol', resp: 'árboles' },
+      { texto: 'reloj', resp: 'relojes' }, { texto: 'lápiz', resp: 'lápices' },
+      { texto: 'gato', resp: 'gatos' }, { texto: 'canción', resp: 'canciones' },
+      { texto: 'perro', resp: 'perros' }, { texto: 'papel', resp: 'papeles' },
+      { texto: 'silla', resp: 'sillas' }, { texto: 'camión', resp: 'camiones' },
+      { texto: 'pez', resp: 'peces' }, { texto: 'nariz', resp: 'narices' },
+      { texto: 'casa', resp: 'casas' }, { texto: 'color', resp: 'colores' }
+    ]
+  },
+  '3': {
+    instruccion: 'Escribe un sinónimo (palabra que signifique lo mismo) para cada palabra.*',
+    items: [
+      { texto: 'feliz', resp: 'contento' }, { texto: 'grande', resp: 'enorme' },
+      { texto: 'bonito', resp: 'hermoso' }, { texto: 'rápido', resp: 'veloz' },
+      { texto: 'triste', resp: 'apenado' }, { texto: 'valiente', resp: 'audaz' },
+      { texto: 'pequeño', resp: 'chico' }, { texto: 'inteligente', resp: 'listo' },
+      { texto: 'cansado', resp: 'agotado' }, { texto: 'fuerte', resp: 'poderoso' },
+      { texto: 'flaco', resp: 'delgado' }, { texto: 'gritar', resp: 'vociferar' },
+      { texto: 'mirar', resp: 'observar' }, { texto: 'comenzar', resp: 'iniciar' },
+      { texto: 'terminar', resp: 'finalizar' }, { texto: 'ayudar', resp: 'auxiliar' }
+    ]
+  },
+  '4': {
+    instruccion: 'Subraya el verbo (la acción) en cada oración y escríbelo en la línea.',
+    items: [
+      { texto: 'El niño corre en el parque.', resp: 'corre' },
+      { texto: 'Mi mamá cocina la cena.', resp: 'cocina' },
+      { texto: 'Los pájaros vuelan alto.', resp: 'vuelan' },
+      { texto: 'Ana escribe una carta.', resp: 'escribe' },
+      { texto: 'El perro ladra fuerte.', resp: 'ladra' },
+      { texto: 'Nosotros jugamos fútbol.', resp: 'jugamos' },
+      { texto: 'El sol brilla en el cielo.', resp: 'brilla' },
+      { texto: 'Ella canta una canción bonita.', resp: 'canta' },
+      { texto: 'Los niños estudian para el examen.', resp: 'estudian' },
+      { texto: 'El gato duerme en el sillón.', resp: 'duerme' },
+      { texto: 'Mi papá maneja el carro.', resp: 'maneja' },
+      { texto: 'Las flores crecen en el jardín.', resp: 'crecen' }
+    ]
+  },
+  '5': {
+    instruccion: 'Completa cada palabra con B o V.',
+    items: [
+      { texto: 'a_ión (avión)', resp: 'v' }, { texto: '_arco (barco)', resp: 'b' },
+      { texto: 'nue_o (nuevo)', resp: 'v' }, { texto: '_iento (viento)', resp: 'v' },
+      { texto: '_onito (bonito)', resp: 'b' }, { texto: 'ur_ano (urbano)', resp: 'b' },
+      { texto: 'jo_en (joven)', resp: 'v' }, { texto: '_alón (balón)', resp: 'b' },
+      { texto: 'lle_ar (llevar)', resp: 'v' }, { texto: '_iaje (viaje)', resp: 'v' },
+      { texto: 'esta_a (estaba)', resp: 'b' }, { texto: 'cue_a (cueva)', resp: 'v' },
+      { texto: '_iblioteca (biblioteca)', resp: 'b' }, { texto: 'sua_e (suave)', resp: 'v' },
+      { texto: '_urro (burro)', resp: 'b' }, { texto: 'ser_icio (servicio)', resp: 'v' }
+    ]
+  },
+  '6': {
+    instruccion: 'Escribe si la palabra es un sinónimo (S) o un antónimo (A) del par, y escribe una palabra ejemplo.*',
+    items: [
+      { texto: 'Antónimo de "alegre":', resp: 'triste' }, { texto: 'Sinónimo de "veloz":', resp: 'rápido' },
+      { texto: 'Antónimo de "grande":', resp: 'pequeño' }, { texto: 'Sinónimo de "hermoso":', resp: 'bonito' },
+      { texto: 'Antónimo de "día":', resp: 'noche' }, { texto: 'Sinónimo de "comenzar":', resp: 'iniciar' },
+      { texto: 'Antónimo de "subir":', resp: 'bajar' }, { texto: 'Sinónimo de "callado":', resp: 'silencioso' },
+      { texto: 'Antónimo de "caro":', resp: 'barato' }, { texto: 'Sinónimo de "difícil":', resp: 'complicado' },
+      { texto: 'Antónimo de "limpio":', resp: 'sucio' }, { texto: 'Sinónimo de "amable":', resp: 'cortés' },
+      { texto: 'Antónimo de "abrir":', resp: 'cerrar' }, { texto: 'Sinónimo de "enojado":', resp: 'molesto' }
+    ]
+  }
+};
+
+function mostrarHoja() {
+  const grado = gradoSelect.value;
+  document.getElementById('gradoTexto').textContent = grado + '°';
+  const banco = bancos[grado];
+  instruccionTexto.textContent = banco.instruccion;
+  const seleccion = mezclar(banco.items).slice(0, 8);
+  problemasDiv.innerHTML = '';
+  seleccion.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'problema';
+    div.innerHTML = `${p.texto} <span class="linea"></span><span class="respuesta">${p.resp}</span>`;
+    problemasDiv.appendChild(div);
+  });
+  hoja.classList.remove('mostrar-respuestas');
+  document.getElementById('respuestasBtn').textContent = '👁️ Ver respuestas';
+}
+
+document.getElementById('generarBtn').onclick = mostrarHoja;
+gradoSelect.onchange = mostrarHoja;
+document.getElementById('imprimirBtn').onclick = () => window.print();
+document.getElementById('respuestasBtn').onclick = () => {
+  hoja.classList.toggle('mostrar-respuestas');
+  document.getElementById('respuestasBtn').textContent = hoja.classList.contains('mostrar-respuestas') ? '🙈 Ocultar respuestas' : '👁️ Ver respuestas';
+};
+
+mostrarHoja();
+</script>
+
+</body>
+</html>
