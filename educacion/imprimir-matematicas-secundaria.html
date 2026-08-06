@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Imprimir Matemáticas - Secundaria</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #fef9f0; margin: 0; padding: 20px; }
+  h1 { color: #d35400; }
+  .volver { display: inline-block; margin-bottom: 15px; color: #d35400; text-decoration: none; font-weight: bold; }
+  select, button { padding: 10px 14px; border-radius: 8px; border: 2px solid #d35400; font-size: 15px; margin: 5px; }
+  button { background: #d35400; color: white; border: none; cursor: pointer; }
+  button.secundario { background: #27ae60; }
+  button.terciario { background: #8e44ad; }
+  #hoja { background: white; max-width: 650px; margin: 20px auto; padding: 25px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); text-align: left; }
+  #hoja h2 { text-align: center; color: #d35400; margin-top: 0; }
+  #hoja .datos { display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+  .problemas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 30px; }
+  .problema { font-size: 20px; text-align: center; border: 1px solid #ddd; border-radius: 8px; padding: 15px 10px; }
+  .problema .respuesta { color: #27ae60; font-weight: bold; display: none; }
+  .mostrar-respuestas .respuesta { display: inline; }
+  .mostrar-respuestas .linea { display: none; }
+  .linea { display: inline-block; border-bottom: 2px solid #333; width: 60px; margin-left: 8px; }
+  @media print {
+    .no-imprimir { display: none; }
+    body { background: white; padding: 0; }
+    #hoja { box-shadow: none; margin: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<a class="volver no-imprimir" href="index.html">← Volver a materias</a>
+<h1 class="no-imprimir">🖨️ Hojas de Matemáticas para Imprimir</h1>
+
+<div class="no-imprimir">
+  <label>Grado: </label>
+  <select id="grado">
+    <option value="1">1° Secundaria</option>
+    <option value="2">2° Secundaria</option>
+    <option value="3">3° Secundaria</option>
+  </select>
+  <br>
+  <button id="generarBtn">🔄 Generar hoja nueva</button>
+  <button class="secundario" id="imprimirBtn">🖨️ Imprimir</button>
+  <button class="terciario" id="respuestasBtn">👁️ Ver respuestas</button>
+</div>
+
+<div id="hoja">
+  <h2>Hoja de Matemáticas — <span id="gradoTexto">1°</span> de Secundaria</h2>
+  <div class="datos">
+    <span>Nombre: <span class="linea" style="width:150px;"></span></span>
+    <span>Fecha: <span class="linea" style="width:100px;"></span></span>
+  </div>
+  <div class="problemas" id="problemas"></div>
+</div>
+
+<script>
+const problemasDiv = document.getElementById('problemas');
+const gradoSelect = document.getElementById('grado');
+const hoja = document.getElementById('hoja');
+
+function aleatorio(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generarProblemas(grado) {
+  const lista = [];
+
+  if (grado === '1') {
+    // Enteros con negativos
+    for (let i = 0; i < 4; i++) {
+      const a = aleatorio(-15, 15), b = aleatorio(-15, 15);
+      const suma = Math.random() > 0.5;
+      lista.push(suma
+        ? { texto: `${a} + (${b}) =`, resp: a + b }
+        : { texto: `${a} − (${b}) =`, resp: a - b });
+    }
+    // Potencias simples
+    for (let i = 0; i < 2; i++) {
+      const base = aleatorio(2, 6), exp = aleatorio(2, 3);
+      lista.push({ texto: `${base}${exp === 2 ? '²' : '³'} =`, resp: Math.pow(base, exp) });
+    }
+    // Área de rectángulo/cuadrado
+    for (let i = 0; i < 2; i++) {
+      const l1 = aleatorio(3, 12), l2 = aleatorio(3, 12);
+      lista.push({ texto: `Área de rectángulo de ${l1} × ${l2} =`, resp: l1 * l2 });
+    }
+  } else if (grado === '2') {
+    // Ecuaciones lineales simples x + a = b
+    for (let i = 0; i < 4; i++) {
+      const x = aleatorio(2, 20), a = aleatorio(1, 15);
+      const b = x + a;
+      lista.push({ texto: `x + ${a} = ${b}, x =`, resp: x });
+    }
+    // Porcentajes
+    for (let i = 0; i < 2; i++) {
+      const base = aleatorio(20, 300);
+      const porc = [10, 20, 25, 50, 75][aleatorio(0, 4)];
+      lista.push({ texto: `${porc}% de ${base} =`, resp: Math.round(base * porc / 100) });
+    }
+    // Proporciones simples
+    for (let i = 0; i < 2; i++) {
+      const a = aleatorio(2, 8), b = aleatorio(2, 8), c = aleatorio(2, 8);
+      const d = (a * c) / b;
+      if (Number.isInteger(d)) lista.push({ texto: `${a}/${b} = ${c}/x, x =`, resp: d });
+      else lista.push({ texto: `${a}/${b} = x/${b * 2}, x =`, resp: a * 2 });
+    }
+  } else if (grado === '3') {
+    // Ecuaciones de dos pasos
+    for (let i = 0; i < 4; i++) {
+      const x = aleatorio(2, 15), m = aleatorio(2, 5), a = aleatorio(1, 10);
+      const b = m * x + a;
+      lista.push({ texto: `${m}x + ${a} = ${b}, x =`, resp: x });
+    }
+    // Raíces cuadradas exactas
+    for (let i = 0; i < 2; i++) {
+      const raiz = aleatorio(2, 12);
+      lista.push({ texto: `√${raiz * raiz} =`, resp: raiz });
+    }
+    // Teorema de Pitágoras (ternas conocidas)
+    const ternas = [[3,4,5],[6,8,10],[5,12,13],[9,12,15],[8,15,17]];
+    for (let i = 0; i < 2; i++) {
+      const t = ternas[aleatorio(0, ternas.length - 1)];
+      lista.push({ texto: `Catetos ${t[0]} y ${t[1]}, hipotenusa =`, resp: t[2] });
+    }
+  }
+
+  return lista;
+}
+
+function mostrarHoja() {
+  const grado = gradoSelect.value;
+  document.getElementById('gradoTexto').textContent = grado + '°';
+  const problemas = generarProblemas(grado);
+  problemasDiv.innerHTML = '';
+  problemas.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'problema';
+    div.innerHTML = `${p.texto} <span class="linea"></span><span class="respuesta">${p.resp}</span>`;
+    problemasDiv.appendChild(div);
+  });
+  hoja.classList.remove('mostrar-respuestas');
+  document.getElementById('respuestasBtn').textContent = '👁️ Ver respuestas';
+}
+
+document.getElementById('generarBtn').onclick = mostrarHoja;
+gradoSelect.onchange = mostrarHoja;
+document.getElementById('imprimirBtn').onclick = () => window.print();
+document.getElementById('respuestasBtn').onclick = () => {
+  hoja.classList.toggle('mostrar-respuestas');
+  document.getElementById('respuestasBtn').textContent = hoja.classList.contains('mostrar-respuestas') ? '🙈 Ocultar respuestas' : '👁️ Ver respuestas';
+};
+
+mostrarHoja();
+</script>
+
+</body>
+</html>

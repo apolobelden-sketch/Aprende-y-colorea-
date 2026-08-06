@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Imprimir Español - Secundaria</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #fef9f0; margin: 0; padding: 20px; }
+  h1 { color: #d35400; }
+  .volver { display: inline-block; margin-bottom: 15px; color: #d35400; text-decoration: none; font-weight: bold; }
+  select, button { padding: 10px 14px; border-radius: 8px; border: 2px solid #d35400; font-size: 15px; margin: 5px; }
+  button { background: #d35400; color: white; border: none; cursor: pointer; }
+  button.secundario { background: #27ae60; }
+  button.terciario { background: #8e44ad; }
+  #hoja { background: white; max-width: 650px; margin: 20px auto; padding: 25px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); text-align: left; }
+  #hoja h2 { text-align: center; color: #d35400; margin-top: 0; }
+  #hoja .datos { display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+  #hoja .instruccion { font-size: 13px; color: #888; margin-bottom: 12px; }
+  .problemas { display: flex; flex-direction: column; gap: 14px; }
+  .problema { font-size: 17px; border: 1px solid #ddd; border-radius: 8px; padding: 12px 15px; }
+  .problema .respuesta { color: #27ae60; font-weight: bold; display: none; }
+  .mostrar-respuestas .respuesta { display: inline; }
+  .mostrar-respuestas .linea { display: none; }
+  .linea { display: inline-block; border-bottom: 2px solid #333; width: 140px; margin-left: 8px; }
+  .aviso { font-size: 12px; color: #aaa; }
+  @media print {
+    .no-imprimir { display: none; }
+    body { background: white; padding: 0; }
+    #hoja { box-shadow: none; margin: 0; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<a class="volver no-imprimir" href="index.html">← Volver a materias</a>
+<h1 class="no-imprimir">🖨️ Hojas de Español para Imprimir</h1>
+
+<div class="no-imprimir">
+  <label>Grado: </label>
+  <select id="grado">
+    <option value="1">1° Secundaria</option>
+    <option value="2">2° Secundaria</option>
+    <option value="3">3° Secundaria</option>
+  </select>
+  <br>
+  <button id="generarBtn">🔄 Generar hoja nueva</button>
+  <button class="secundario" id="imprimirBtn">🖨️ Imprimir</button>
+  <button class="terciario" id="respuestasBtn">👁️ Ver respuestas</button>
+</div>
+
+<div id="hoja">
+  <h2>Hoja de Español — <span id="gradoTexto">1°</span> de Secundaria</h2>
+  <div class="datos">
+    <span>Nombre: <span class="linea" style="width:150px;"></span></span>
+    <span>Fecha: <span class="linea" style="width:100px;"></span></span>
+  </div>
+  <p class="instruccion" id="instruccionTexto"></p>
+  <div class="problemas" id="problemas"></div>
+</div>
+<p class="aviso no-imprimir">* En ejercicios abiertos puede haber más de una respuesta correcta; la que se muestra es solo un ejemplo válido.</p>
+
+<script>
+const problemasDiv = document.getElementById('problemas');
+const gradoSelect = document.getElementById('grado');
+const hoja = document.getElementById('hoja');
+const instruccionTexto = document.getElementById('instruccionTexto');
+
+function mezclar(arr) {
+  const copia = [...arr];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+const bancos = {
+  '1': {
+    instruccion: 'Subraya el sujeto y escribe el predicado de cada oración.',
+    items: [
+      { texto: 'El profesor explicó la lección con paciencia.', resp: 'explicó la lección con paciencia' },
+      { texto: 'Los estudiantes entregaron su tarea a tiempo.', resp: 'entregaron su tarea a tiempo' },
+      { texto: 'Mi hermana practica natación todos los días.', resp: 'practica natación todos los días' },
+      { texto: 'El equipo ganó el partido de fútbol.', resp: 'ganó el partido de fútbol' },
+      { texto: 'La biblioteca abre a las ocho de la mañana.', resp: 'abre a las ocho de la mañana' },
+      { texto: 'Los científicos descubrieron una nueva especie.', resp: 'descubrieron una nueva especie' },
+      { texto: 'El autor escribió tres novelas famosas.', resp: 'escribió tres novelas famosas' },
+      { texto: 'Las plantas necesitan agua y luz solar.', resp: 'necesitan agua y luz solar' },
+      { texto: 'Mi abuelo cuenta historias interesantes.', resp: 'cuenta historias interesantes' },
+      { texto: 'El río atraviesa todo el valle.', resp: 'atraviesa todo el valle' }
+    ]
+  },
+  '2': {
+    instruccion: 'Identifica la figura literaria (metáfora o símil) e indica cuál es.*',
+    items: [
+      { texto: '"Sus ojos son como estrellas" es un(a):', resp: 'símil' },
+      { texto: '"El tiempo es oro" es un(a):', resp: 'metáfora' },
+      { texto: '"Fuerte como un león" es un(a):', resp: 'símil' },
+      { texto: '"Sus palabras eran dagas" es un(a):', resp: 'metáfora' },
+      { texto: '"Blanca como la nieve" es un(a):', resp: 'símil' },
+      { texto: '"La vida es un sueño" es un(a):', resp: 'metáfora' },
+      { texto: '"Rápido como el viento" es un(a):', resp: 'símil' },
+      { texto: '"Un mar de gente" es un(a):', resp: 'metáfora' },
+      { texto: '"Suave como la seda" es un(a):', resp: 'símil' },
+      { texto: '"Río de lágrimas" es un(a):', resp: 'metáfora' }
+    ]
+  },
+  '3': {
+    instruccion: 'Escribe un conector adecuado (por ejemplo: sin embargo, además, por lo tanto, aunque) para completar cada oración.*',
+    items: [
+      { texto: 'Estudió mucho, ___ no aprobó el examen.', resp: 'sin embargo' },
+      { texto: 'Llovía fuerte, ___ decidimos salir.', resp: 'aunque' },
+      { texto: 'Terminó su tarea, ___ pudo salir a jugar.', resp: 'por lo tanto' },
+      { texto: 'Le gusta leer, ___ también le gusta escribir.', resp: 'además' },
+      { texto: 'No tenía dinero, ___ compró el boleto.', resp: 'sin embargo' },
+      { texto: 'Se esforzó mucho, ___ logró su meta.', resp: 'por lo tanto' },
+      { texto: 'Es inteligente, ___ es muy trabajador.', resp: 'además' },
+      { texto: 'Estaba cansado, ___ siguió trabajando.', resp: 'aunque' },
+      { texto: 'No entendía el tema, ___ preguntó al maestro.', resp: 'por lo tanto' },
+      { texto: 'Quería ir a la fiesta, ___ tenía que estudiar.', resp: 'sin embargo' }
+    ]
+  }
+};
+
+function mostrarHoja() {
+  const grado = gradoSelect.value;
+  document.getElementById('gradoTexto').textContent = grado + '°';
+  const banco = bancos[grado];
+  instruccionTexto.textContent = banco.instruccion;
+  const seleccion = mezclar(banco.items).slice(0, 7);
+  problemasDiv.innerHTML = '';
+  seleccion.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'problema';
+    div.innerHTML = `${p.texto} <span class="linea"></span><span class="respuesta">${p.resp}</span>`;
+    problemasDiv.appendChild(div);
+  });
+  hoja.classList.remove('mostrar-respuestas');
+  document.getElementById('respuestasBtn').textContent = '👁️ Ver respuestas';
+}
+
+document.getElementById('generarBtn').onclick = mostrarHoja;
+gradoSelect.onchange = mostrarHoja;
+document.getElementById('imprimirBtn').onclick = () => window.print();
+document.getElementById('respuestasBtn').onclick = () => {
+  hoja.classList.toggle('mostrar-respuestas');
+  document.getElementById('respuestasBtn').textContent = hoja.classList.contains('mostrar-respuestas') ? '🙈 Ocultar respuestas' : '👁️ Ver respuestas';
+};
+
+mostrarHoja();
+</script>
+
+</body>
+</html>
