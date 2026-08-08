@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primaria - Español</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #fef9f0; margin: 0; padding: 20px; }
+  h1 { color: #d35400; }
+  .volver { display: inline-block; margin-bottom: 20px; color: #d35400; text-decoration: none; font-weight: bold; }
+  .pregunta { background: white; border: 2px solid #d35400; border-radius: 12px; padding: 25px; max-width: 500px; margin: 20px auto; }
+  .opcion { display: block; width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 2px solid #ccc; background: white; font-size: 16px; cursor: pointer; }
+  .opcion:hover { border-color: #d35400; }
+  .correcta { background: #2ecc71 !important; color: white; border-color: #2ecc71 !important; }
+  .incorrecta { background: #e74c3c !important; color: white; border-color: #e74c3c !important; }
+  #puntaje { font-size: 18px; font-weight: bold; color: #d35400; }
+  #siguienteBtn { padding: 10px 20px; margin-top: 15px; border-radius: 8px; border: none; background: #27ae60; color: white; font-size: 15px; cursor: pointer; display: none; }
+</style>
+</head>
+<body>
+
+<a class="volver" href="../index.html">← Volver a materias</a>
+<h1>📝 Primaria — Español</h1>
+<p id="puntaje">Puntaje: 0 / 0</p>
+
+<div class="pregunta" id="areaPregunta"></div>
+
+<script>
+const bancoPreguntas = [
+  { texto: "¿Cuál palabra es un sustantivo?", opciones: ["Correr","Perro","Rápido"], correcta: 1 },
+  { texto: "¿Cuál palabra es un verbo?", opciones: ["Saltar","Mesa","Azul"], correcta: 0 },
+  { texto: "¿Cuál oración está bien escrita?", opciones: ["yo Como manzanas","Yo como manzanas.","yo como Manzanas"], correcta: 1 },
+  { texto: "¿Cuál es el plural de 'flor'?", opciones: ["Flores","Flors","Floras"], correcta: 0 },
+  { texto: "¿Cuál palabra lleva acento (tilde)?", opciones: ["Camion","Silla","Mesa"], correcta: 0 },
+  { texto: "¿Cuál es un sinónimo de 'feliz'?", opciones: ["Triste","Contento","Enojado"], correcta: 1 },
+  { texto: "¿Cuál es un antónimo de 'grande'?", opciones: ["Enorme","Gigante","Pequeño"], correcta: 2 },
+  { texto: "¿Cuál palabra es un adjetivo?", opciones: ["Bonito","Comer","Casa"], correcta: 0 },
+  { texto: "¿Cuál es el plural de 'papel'?", opciones: ["Papeles","Papels","Papelos"], correcta: 0 },
+  { texto: "¿Qué signo se usa al final de una pregunta?", opciones: [".","¿?","!"], correcta: 1 },
+  { texto: "¿Cuál palabra empieza con mayúscula correctamente?", opciones: ["méxico","México","MÉxico"], correcta: 1 },
+  { texto: "¿Cuál es un sinónimo de 'rápido'?", opciones: ["Lento","Veloz","Quieto"], correcta: 1 },
+  { texto: "¿Cuál palabra es singular?", opciones: ["Casas","Casa","Casitas"], correcta: 1 },
+  { texto: "¿Cuál es el femenino de 'niño'?", opciones: ["Niño","Niña","Niños"], correcta: 1 },
+  { texto: "¿Cuál oración tiene un error de ortografía?", opciones: ["El perro corre.","La caza es de mi abuela.","Me gusta leer."], correcta: 1 },
+  { texto: "¿Cuál palabra es un verbo en pasado?", opciones: ["Comí","Como","Comeré"], correcta: 0 },
+  { texto: "¿Cuál es un antónimo de 'rápido'?", opciones: ["Veloz","Lento","Ágil"], correcta: 1 },
+  { texto: "¿Cuál palabra rima con 'gato'?", opciones: ["Pato","Perro","Mesa"], correcta: 0 },
+  { texto: "¿Cuál es el plural de 'ratón'?", opciones: ["Ratons","Ratones","Ratónes"], correcta: 1 },
+  { texto: "¿Cuál palabra es un sustantivo propio?", opciones: ["ciudad","María","bonito"], correcta: 1 },
+  { texto: "¿Cuál oración usa bien la coma?", opciones: ["Compré, manzanas peras y uvas.","Compré manzanas, peras y uvas.","Compré manzanas peras, y uvas."], correcta: 1 },
+  { texto: "¿Cuál es un sinónimo de 'bonito'?", opciones: ["Feo","Hermoso","Aburrido"], correcta: 1 },
+  { texto: "¿Cuál palabra tiene diptongo?", opciones: ["Aire","Casa","Mesa"], correcta: 0 },
+  { texto: "¿Cuál es el aumentativo de 'perro'?", opciones: ["Perrito","Perrote","Perral"], correcta: 1 },
+  { texto: "¿Cuántas sílabas tiene la palabra 'mariposa'?", opciones: ["3","4","5"], correcta: 1 },
+  { texto: "¿Cuál palabra va primero en orden alfabético?", opciones: ["Zapato","Árbol","Casa"], correcta: 1 },
+  { texto: "¿Cuál es el diminutivo de 'casa'?", opciones: ["Casona","Casita","Casote"], correcta: 1 },
+  { texto: "¿Cuál palabra es un pronombre?", opciones: ["Yo","Correr","Bonito"], correcta: 0 },
+  { texto: "¿Cuál oración es interrogativa?", opciones: ["El perro corre.","¿Cómo te llamas?","Qué bonito día."], correcta: 1 },
+  { texto: "¿Cuál palabra tiene tres sílabas?", opciones: ["Sol","Casa","Ventana"], correcta: 2 },
+  { texto: "¿Cuál es un sinónimo de 'grande'?", opciones: ["Chico","Enorme","Bajo"], correcta: 1 },
+  { texto: "¿Cuál palabra está en plural?", opciones: ["Mesa","Mesas","Mesita"], correcta: 1 },
+  { texto: "¿Cuál palabra es esdrújula (el acento va en la antepenúltima sílaba)?", opciones: ["Médico","Camión","Pared"], correcta: 0 },
+  { texto: "¿Cuál oración usa bien el punto?", opciones: ["Me gusta el fútbol","Me gusta el fútbol.","me gusta el fútbol."], correcta: 1 },
+  { texto: "¿Cuál palabra es un verbo en futuro?", opciones: ["Comeré","Comí","Como"], correcta: 0 },
+  { texto: "¿Cuál palabra significa lo mismo que 'contento'?", opciones: ["Triste","Alegre","Enojado"], correcta: 1 },
+  { texto: "¿Cuál palabra es el masculino de 'gata'?", opciones: ["Gato","Gatita","Gatos"], correcta: 0 },
+  { texto: "¿Cuál es el antónimo de 'subir'?", opciones: ["Bajar","Correr","Saltar"], correcta: 0 },
+  { texto: "¿Cuál palabra lleva mayúscula por ser nombre propio?", opciones: ["perro","juan","mesa"], correcta: 1 },
+  { texto: "¿Cuál palabra es aguda (el acento va en la última sílaba)?", opciones: ["Café","Mesa","Casa"], correcta: 0 },
+  { texto: "¿Cuál es el plural de 'lápiz'?", opciones: ["Lapizes","Lápices","Lapices"], correcta: 1 },
+  { texto: "¿Cuál palabra es un adverbio?", opciones: ["Rápidamente","Perro","Azul"], correcta: 0 },
+  { texto: "¿Qué signo se usa para separar elementos en una lista?", opciones: ["Punto","Coma","Signo de interrogación"], correcta: 1 },
+  { texto: "¿Cuál palabra tiene un diptongo?", opciones: ["Cielo","Casa","Mesa"], correcta: 0 },
+  { texto: "¿Cuál es un sinónimo de 'comenzar'?", opciones: ["Terminar","Iniciar","Detener"], correcta: 1 },
+  { texto: "¿Cuál oración es exclamativa?", opciones: ["¿Vienes conmigo?","¡Qué alegría verte!","Voy a la tienda."], correcta: 1 },
+  { texto: "¿Cuál es el plural de 'ciudad'?", opciones: ["Ciudads","Ciudades","Ciudás"], correcta: 1 },
+  { texto: "¿Cuál palabra es un sinónimo de 'valiente'?", opciones: ["Cobarde","Audaz","Tímido"], correcta: 1 }
+];
+
+function mezclar(arr) {
+  const copia = [...arr];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+const preguntas = mezclar(bancoPreguntas).slice(0, 10);
+
+let actual = 0;
+let correctas = 0;
+
+function mostrarPregunta() {
+  const p = preguntas[actual];
+  const area = document.getElementById('areaPregunta');
+  area.innerHTML = `
+    <p><strong>${p.texto}</strong></p>
+    ${p.opciones.map((op, i) => `<button class="opcion" onclick="responder(${i})">${op}</button>`).join('')}
+    <p id="resultado"></p>
+    <button id="siguienteBtn" onclick="siguientePregunta()">Siguiente →</button>
+  `;
+}
+
+function responder(indice) {
+  const p = preguntas[actual];
+  const botones = document.querySelectorAll('.opcion');
+  botones.forEach(b => b.disabled = true);
+  const esCorrecta = indice === p.correcta;
+  botones[indice].classList.add(esCorrecta ? 'correcta' : 'incorrecta');
+  if (!esCorrecta) botones[p.correcta].classList.add('correcta');
+  document.getElementById('resultado').textContent = esCorrecta ? '¡Correcto! 🎉' : 'Casi, revisa la respuesta correcta.';
+  if (esCorrecta) correctas++;
+  document.getElementById('puntaje').textContent = `Puntaje: ${correctas} / ${actual + 1}`;
+  document.getElementById('siguienteBtn').style.display = 'inline-block';
+}
+
+function siguientePregunta() {
+  actual++;
+  if (actual < preguntas.length) {
+    mostrarPregunta();
+  } else {
+    document.getElementById('areaPregunta').innerHTML = `<p><strong>¡Terminaste! 🏆</strong></p><p>Puntaje final: ${correctas} / ${preguntas.length}</p>`;
+  }
+}
+
+mostrarPregunta();
+</script>
+
+</body>
+</html>
