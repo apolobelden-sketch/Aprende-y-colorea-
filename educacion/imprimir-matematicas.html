@@ -17,6 +17,7 @@
   #hoja .datos { display: flex; justify-content: space-between; font-size: 14px; color: #555; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
   .problemas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 30px; }
   .problema { font-size: 22px; text-align: center; border: 1px solid #ddd; border-radius: 8px; padding: 15px 10px; }
+  .problema.ancho { grid-column: 1 / -1; text-align: left; font-size: 17px; }
   .problema .respuesta { color: #27ae60; font-weight: bold; display: none; }
   .mostrar-respuestas .respuesta { display: inline; }
   .mostrar-respuestas .linea { display: none; }
@@ -69,10 +70,11 @@ function aleatorio(min, max) {
 
 function generarProblemas(grado) {
   const lista = [];
+  const emojis = ['🍎','⭐','🐟','🎈','🌸','🍪'];
 
   if (grado === '1') {
     // Suma y resta del 1 al 10
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 5; i++) {
       const a = aleatorio(1, 10), b = aleatorio(1, 10 - Math.min(a, 5));
       const suma = Math.random() > 0.5;
       if (suma) lista.push({ texto: `${a} + ${b} =`, resp: a + b });
@@ -81,9 +83,21 @@ function generarProblemas(grado) {
         lista.push({ texto: `${mayor} − ${menor} =`, resp: mayor - menor });
       }
     }
+    // Conteo visual con emojis
+    for (let i = 0; i < 2; i++) {
+      const cant = aleatorio(3, 9);
+      const emoji = emojis[aleatorio(0, emojis.length - 1)];
+      lista.push({ texto: `¿Cuántos hay? ${emoji.repeat(cant)}`, resp: cant });
+    }
+    // Comparación mayor/menor
+    for (let i = 0; i < 2; i++) {
+      const a = aleatorio(1, 10), b = aleatorio(1, 10);
+      if (a === b) { lista.push({ texto: `Encierra el mayor: ${a} o ${b + 1}`, resp: `${b + 1}` }); continue; }
+      lista.push({ texto: `Encierra el número mayor: ${a} o ${b}`, resp: Math.max(a, b) });
+    }
   } else if (grado === '2') {
     // Suma y resta hasta 100
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 5; i++) {
       const a = aleatorio(10, 99), b = aleatorio(10, 99);
       const suma = Math.random() > 0.5;
       if (suma) lista.push({ texto: `${a} + ${b} =`, resp: a + b });
@@ -92,9 +106,20 @@ function generarProblemas(grado) {
         lista.push({ texto: `${mayor} − ${menor} =`, resp: mayor - menor });
       }
     }
+    // Valor posicional
+    for (let i = 0; i < 2; i++) {
+      const num = aleatorio(11, 99);
+      const decenas = Math.floor(num / 10), unidades = num % 10;
+      lista.push({ texto: `${num} tiene ___ decenas y ___ unidades`, resp: `${decenas} decenas, ${unidades} unidades` });
+    }
+    // Problema razonado
+    const nombres1 = ['Ana', 'Luis', 'Sofía', 'Carlos'];
+    const nom1 = nombres1[aleatorio(0, 3)];
+    const tiene1 = aleatorio(10, 40), le_dan1 = aleatorio(5, 30);
+    lista.push({ texto: `(Problema) ${nom1} tiene ${tiene1} canicas y le regalan ${le_dan1} más. ¿Cuántas canicas tiene en total?`, resp: tiene1 + le_dan1, ancho: true });
   } else if (grado === '3') {
-    // Suma/resta con llevada + multiplicación tablas 2-5
-    for (let i = 0; i < 6; i++) {
+    // Suma/resta con llevada
+    for (let i = 0; i < 4; i++) {
       const a = aleatorio(100, 999), b = aleatorio(100, 999);
       const suma = Math.random() > 0.5;
       if (suma) lista.push({ texto: `${a} + ${b} =`, resp: a + b });
@@ -103,47 +128,74 @@ function generarProblemas(grado) {
         lista.push({ texto: `${mayor} − ${menor} =`, resp: mayor - menor });
       }
     }
-    for (let i = 0; i < 4; i++) {
+    // Multiplicación tablas 2-5
+    for (let i = 0; i < 3; i++) {
       const a = aleatorio(2, 5), b = aleatorio(1, 10);
       lista.push({ texto: `${a} × ${b} =`, resp: a * b });
     }
+    // Problema razonado
+    const filas = aleatorio(3, 8), porFila = aleatorio(2, 6);
+    lista.push({ texto: `(Problema) Un salón tiene ${filas} filas con ${porFila} sillas cada una. ¿Cuántas sillas hay en total?`, resp: filas * porFila, ancho: true });
   } else if (grado === '4') {
-    // Multiplicación completa + división simple
-    for (let i = 0; i < 5; i++) {
+    // Multiplicación completa
+    for (let i = 0; i < 3; i++) {
       const a = aleatorio(2, 10), b = aleatorio(2, 10);
       lista.push({ texto: `${a} × ${b} =`, resp: a * b });
     }
-    for (let i = 0; i < 5; i++) {
+    // División simple
+    for (let i = 0; i < 3; i++) {
       const b = aleatorio(2, 9), resp = aleatorio(2, 12), a = b * resp;
       lista.push({ texto: `${a} ÷ ${b} =`, resp });
     }
+    // Fracción visual (texto)
+    for (let i = 0; i < 2; i++) {
+      const den = aleatorio(4, 10), num = aleatorio(1, den - 1);
+      lista.push({ texto: `Si coloreas ${num} de ${den} partes iguales, ¿qué fracción es?`, resp: `${num}/${den}` });
+    }
+    // Problema razonado de dos pasos
+    const cajas = aleatorio(3, 8), porCaja = aleatorio(4, 12);
+    lista.push({ texto: `(Problema) Hay ${cajas} cajas con ${porCaja} lápices cada una. Si se reparten entre 2 salones por igual, ¿cuántos lápices recibe cada salón?`, resp: Math.round(cajas * porCaja / 2), ancho: true });
   } else if (grado === '5') {
-    // Multiplicación/división de 2 dígitos + fracciones simples
-    for (let i = 0; i < 4; i++) {
+    // Multiplicación de 2 dígitos
+    for (let i = 0; i < 3; i++) {
       const a = aleatorio(11, 30), b = aleatorio(2, 9);
       lista.push({ texto: `${a} × ${b} =`, resp: a * b });
     }
-    for (let i = 0; i < 4; i++) {
+    // Fracciones simples
+    for (let i = 0; i < 2; i++) {
       const den = aleatorio(2, 6);
       lista.push({ texto: `${den}/${den} + 1/${den} =`, resp: `${den + 1}/${den}` });
     }
+    // Conversión de medidas
+    const metros = aleatorio(2, 9);
+    lista.push({ texto: `${metros} metros = ___ centímetros`, resp: metros * 100 });
+    // Problema razonado con decimales
+    const precio = (aleatorio(15, 80) / 10).toFixed(1);
+    const cantidad = aleatorio(2, 6);
+    lista.push({ texto: `(Problema) Un cuaderno cuesta $${precio}. ¿Cuánto cuestan ${cantidad} cuadernos?`, resp: `$${(precio * cantidad).toFixed(1)}`, ancho: true });
   } else if (grado === '6') {
-    // Fracciones, decimales, porcentajes
-    for (let i = 0; i < 3; i++) {
+    // Fracción de cantidad
+    for (let i = 0; i < 2; i++) {
       const den = aleatorio(2, 8);
       const num1 = aleatorio(1, den - 1);
       lista.push({ texto: `¿Cuánto es ${num1}/${den} de 100?`, resp: Math.round((num1 / den) * 100) });
     }
-    for (let i = 0; i < 3; i++) {
+    // Porcentaje
+    for (let i = 0; i < 2; i++) {
       const base = aleatorio(20, 200);
       const porc = [10, 20, 25, 50][aleatorio(0, 3)];
       lista.push({ texto: `¿Cuánto es el ${porc}% de ${base}?`, resp: Math.round(base * porc / 100) });
     }
-    for (let i = 0; i < 2; i++) {
-      const a = (aleatorio(10, 99) / 10).toFixed(1);
-      const b = (aleatorio(10, 99) / 10).toFixed(1);
-      lista.push({ texto: `${a} + ${b} =`, resp: (parseFloat(a) + parseFloat(b)).toFixed(1) });
-    }
+    // Decimales
+    const da = (aleatorio(10, 99) / 10).toFixed(1);
+    const db = (aleatorio(10, 99) / 10).toFixed(1);
+    lista.push({ texto: `${da} + ${db} =`, resp: (parseFloat(da) + parseFloat(db)).toFixed(1) });
+    // Geometría: perímetro
+    const l1 = aleatorio(4, 15), l2 = aleatorio(4, 15);
+    lista.push({ texto: `Perímetro de un rectángulo de ${l1} × ${l2} =`, resp: 2 * (l1 + l2) });
+    // Problema razonado multipaso
+    const ahorro = aleatorio(50, 200), gasto_porc = [10, 20, 25][aleatorio(0, 2)];
+    lista.push({ texto: `(Problema) Tienes $${ahorro} ahorrados y gastas el ${gasto_porc}%. ¿Cuánto dinero te queda?`, resp: `$${ahorro - Math.round(ahorro * gasto_porc / 100)}`, ancho: true });
   }
 
   return lista;
@@ -156,7 +208,7 @@ function mostrarHoja() {
   problemasDiv.innerHTML = '';
   problemas.forEach(p => {
     const div = document.createElement('div');
-    div.className = 'problema';
+    div.className = p.ancho ? 'problema ancho' : 'problema';
     div.innerHTML = `${p.texto} <span class="linea"></span><span class="respuesta">${p.resp}</span>`;
     problemasDiv.appendChild(div);
   });
