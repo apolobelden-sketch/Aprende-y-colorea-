@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trazos - Aprende a Escribir</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #fef9f0; margin: 0; padding: 20px; }
+  h1 { color: #d35400; }
+  .volver { display: inline-block; margin-bottom: 15px; color: #d35400; text-decoration: none; font-weight: bold; }
+  .categorias { margin: 10px 0; }
+  .categorias button { padding: 10px 16px; margin: 4px; border-radius: 8px; border: none; background: #95a5a6; color: white; font-size: 14px; cursor: pointer; }
+  .categorias button.activa { background: #d35400; }
+  #cuadricula { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 500px; margin: 12px auto; }
+  #cuadricula button { width: 40px; height: 40px; border-radius: 8px; border: 2px solid #d35400; background: white; color: #d35400; font-size: 16px; font-weight: bold; cursor: pointer; }
+  #cuadricula button.actual { background: #d35400; color: white; }
+  #lienzoContenedor { display: inline-block; border: 3px solid #333; border-radius: 10px; background: white; margin-top: 10px; }
+  canvas { cursor: crosshair; max-width: 90vw; touch-action: none; }
+  .accion { padding: 10px 18px; margin: 5px; border-radius: 8px; border: none; background: #27ae60; color: white; font-size: 15px; cursor: pointer; }
+  .navegacion { margin-top: 10px; }
+  .navegacion button { background: #3498db; }
+  #letraActual { font-size: 20px; color: #d35400; font-weight: bold; margin: 8px 0; }
+</style>
+</head>
+<body>
+
+<a class="volver" href="index.html">← Volver al inicio</a>
+<h1>✏️ Trazos — Aprende a Escribir</h1>
+
+<div class="categorias">
+  <button id="btnMayus" class="activa">Mayúsculas</button>
+  <button id="btnMinus">minúsculas</button>
+  <button id="btnNumeros">Números</button>
+</div>
+
+<div id="cuadricula"></div>
+
+<p id="letraActual">A</p>
+
+<div id="lienzoContenedor">
+  <canvas id="lienzo" width="400" height="400"></canvas>
+</div>
+
+<br>
+<div class="navegacion">
+  <button class="accion" id="anteriorBtn">← Anterior</button>
+  <button class="accion" id="siguienteBtn">Siguiente →</button>
+</div>
+<button class="accion" id="limpiarBtn" style="background:#e67e22;">↺ Limpiar trazo</button>
+<button class="accion" id="imprimirBtn" style="background:#8e44ad;">🖨️ Imprimir esta letra</button>
+
+<script>
+const canvas = document.getElementById('lienzo');
+const ctx = canvas.getContext('2d');
+const cuadricula = document.getElementById('cuadricula');
+const letraActualTexto = document.getElementById('letraActual');
+
+const conjuntos = {
+  mayus: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+  minus: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+  numeros: '0123456789'.split('')
+};
+
+let conjuntoActual = 'mayus';
+let indiceActual = 0;
+
+function dibujarGuia() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const letra = conjuntos[conjuntoActual][indiceActual];
+  letraActualTexto.textContent = letra;
+
+  ctx.font = 'bold 320px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4;
+  ctx.setLineDash([12, 10]);
+  ctx.strokeStyle = '#cccccc';
+  ctx.strokeText(letra, canvas.width / 2, canvas.height / 2 + 20);
+  ctx.setLineDash([]);
+}
+
+function construirCuadricula() {
+  cuadricula.innerHTML = '';
+  conjuntos[conjuntoActual].forEach((letra, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = letra;
+    if (i === indiceActual) btn.classList.add('actual');
+    btn.onclick = () => {
+      indiceActual = i;
+      dibujarGuia();
+      construirCuadricula();
+    };
+    cuadricula.appendChild(btn);
+  });
+}
+
+function cambiarCategoria(nueva, boton) {
+  conjuntoActual = nueva;
+  indiceActual = 0;
+  document.querySelectorAll('.categorias button').forEach(b => b.classList.remove('activa'));
+  boton.classList.add('activa');
+  dibujarGuia();
+  construirCuadricula();
+}
+
+document.getElementById('btnMayus').onclick = (e) => cambiarCategoria('mayus', e.target);
+document.getElementById('btnMinus').onclick = (e) => cambiarCategoria('minus', e.target);
+document.getElementById('btnNumeros').onclick = (e) => cambiarCategoria('numeros', e.target);
+
+document.getElementById('anteriorBtn').onclick = () => {
+  indiceActual = (indiceActual - 1 + conjuntos[conjuntoActual].length) % conjuntos[conjuntoActual].length;
+  dibujarGuia();
+  construirCuadricula();
+};
+document.getElementById('siguienteBtn').onclick = () => {
+  indiceActual = (indiceActual + 1) % conjuntos[conjuntoActual].length;
+  dibujarGuia();
+  construirCuadricula();
+};
+document.getElementById('limpiarBtn').onclick = dibujarGuia;
+
+document.getElementById('imprimirBtn').onclick = () => {
+  const ventana = window.open('');
+  ventana.document.write('<img src="' + canvas.toDataURL() + '" style="width:100%">');
+  ventana.print();
+};
+
+// Trazo con el dedo/mouse
+let dibujando = false;
+let ultimoPunto = null;
+
+function obtenerPosicion(e) {
+  const rect = canvas.getBoundingClientRect();
+  const escalaX = canvas.width / rect.width;
+  const escalaY = canvas.height / rect.height;
+  const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: (clienteX - rect.left) * escalaX,
+    y: (clienteY - rect.top) * escalaY
+  };
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  dibujando = true;
+  ultimoPunto = obtenerPosicion(e);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!dibujando) return;
+  const pos = obtenerPosicion(e);
+  ctx.strokeStyle = '#3498db';
+  ctx.lineWidth = 10;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(ultimoPunto.x, ultimoPunto.y);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+  ultimoPunto = pos;
+});
+canvas.addEventListener('pointerup', () => { dibujando = false; });
+canvas.addEventListener('pointerleave', () => { dibujando = false; });
+
+dibujarGuia();
+construirCuadricula();
+</script>
+
+</body>
+</html>
