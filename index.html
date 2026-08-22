@@ -28,6 +28,23 @@
   .caja-afiliado .texto strong { display: block; color: #d35400; }
   .caja-afiliado .texto small { color: #888; }
   footer { margin-top: 40px; padding: 25px; color: #999; font-size: 13px; }
+
+  /* Asistente de navegación */
+  #botonAsistente { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #d35400, #e67e22); color: white; border: none; font-size: 26px; cursor: pointer; box-shadow: 0 6px 16px rgba(0,0,0,0.25); z-index: 1000; }
+  #panelAsistente { position: fixed; bottom: 90px; right: 20px; width: 320px; max-width: 90vw; max-height: 70vh; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: none; flex-direction: column; overflow: hidden; z-index: 1000; }
+  #panelAsistente.abierto { display: flex; }
+  #cabezaAsistente { background: linear-gradient(135deg, #d35400, #e67e22); color: white; padding: 14px; text-align: left; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+  #cerrarAsistente { background: none; border: none; color: white; font-size: 18px; cursor: pointer; }
+  #mensajesAsistente { flex: 1; overflow-y: auto; padding: 12px; text-align: left; background: #fef9f0; }
+  .mensaje { max-width: 85%; padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 14px; line-height: 1.4; }
+  .mensaje.bot { background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-bottom-left-radius: 2px; }
+  .mensaje.usuario { background: #d35400; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
+  .mensaje a.enlaceResultado { display: inline-block; margin-top: 6px; background: #27ae60; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; background: #fef9f0; }
+  .chip { background: white; border: 1px solid #d35400; color: #d35400; border-radius: 20px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  #formAsistente { display: flex; border-top: 1px solid #eee; }
+  #inputAsistente { flex: 1; border: none; padding: 12px; font-size: 14px; outline: none; }
+  #enviarAsistente { background: #d35400; color: white; border: none; padding: 0 16px; cursor: pointer; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -100,6 +117,139 @@
 <footer>
   © 2026 Aprende y Colorea — Hecho con ❤️ para niños que aprenden jugando
 </footer>
+
+<!-- Asistente de navegación inteligente -->
+<button id="botonAsistente" title="¿Qué buscas?">💬</button>
+<div id="panelAsistente">
+  <div id="cabezaAsistente">
+    <span>🧭 ¿Qué buscas hoy?</span>
+    <button id="cerrarAsistente">✕</button>
+  </div>
+  <div id="mensajesAsistente"></div>
+  <div class="chips" id="chipsAsistente"></div>
+  <form id="formAsistente">
+    <input type="text" id="inputAsistente" placeholder="Ej: colorear un gato, sumas de 3er grado...">
+    <button type="submit" id="enviarAsistente">➤</button>
+  </form>
+</div>
+
+<script>
+// Diccionario de rutas: cada una con su etiqueta, ruta y palabras clave que la disparan
+const rutasAsistente = [
+  { etiqueta: 'Colorear e Imprimir', url: 'colorear.html', emoji: '🎨',
+    palabras: ['colorear','pintar','pintura','dibujo','dibujar','dibujos','gato','perro','animal','imagen','cuadro','colores'] },
+  { etiqueta: 'Trazos — Aprende a Escribir', url: 'trazos.html', emoji: '✏️',
+    palabras: ['trazo','trazos','letra','letras','abecedario','alfabeto','numero','numeros','escribir','punteada','puntitos'] },
+  { etiqueta: 'Trazos con Palabras', url: 'trazos-palabras.html', emoji: '🔤',
+    palabras: ['palabra','palabras','trazar palabra'] },
+  { etiqueta: 'Trazos — Hojas para Imprimir', url: 'imprimir-trazos.html', emoji: '🖨️',
+    palabras: ['imprimir trazo','hoja trazo','caligrafia','plana','planas','renglon','renglones'] },
+  { etiqueta: 'Matemáticas Primaria (quiz)', url: 'educacion/primaria/matematicas.html', emoji: '➕',
+    palabras: ['matematicas primaria','suma','sumas','resta','restas','multiplicacion','division','quiz matematicas'] },
+  { etiqueta: 'Español Primaria (quiz)', url: 'educacion/primaria/espanol.html', emoji: '📝',
+    palabras: ['español primaria','ortografia','sinonimo','sinonimos','antonimo','gramatica'] },
+  { etiqueta: 'Matemáticas — Hojas para imprimir (Primaria)', url: 'educacion/imprimir-matematicas.html', emoji: '🖨️',
+    palabras: ['imprimir matematicas','hoja matematicas','hoja de sumas','ejercicios para imprimir'] },
+  { etiqueta: 'Español — Hojas para imprimir (Primaria)', url: 'educacion/imprimir-espanol.html', emoji: '🖨️',
+    palabras: ['imprimir español','hoja español','hoja de escritura'] },
+  { etiqueta: 'Matemáticas Secundaria (quiz)', url: 'educacion/secundaria/matematicas.html', emoji: '📐',
+    palabras: ['matematicas secundaria','algebra','ecuacion','ecuaciones','fraccion','fracciones secundaria'] },
+  { etiqueta: 'Español Secundaria (quiz)', url: 'educacion/secundaria/espanol.html', emoji: '📝',
+    palabras: ['español secundaria','literatura','redaccion'] },
+  { etiqueta: 'Ciencias Secundaria (quiz)', url: 'educacion/secundaria/ciencias.html', emoji: '🔬',
+    palabras: ['ciencias','biologia','fisica','quimica','naturaleza'] },
+  { etiqueta: 'Módulo Educativo (todas las materias)', url: 'educacion/index.html', emoji: '📚',
+    palabras: ['tarea','tareas','escuela','tarea escolar','materias','tarea de matematicas','estudiar'] },
+  { etiqueta: 'Comunidad de Padres', url: 'comentarios.html', emoji: '💬',
+    palabras: ['comentario','comentarios','opinion','sugerencia','contactar','mensaje'] }
+];
+
+function normalizarTexto(t) {
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function buscarMejorRuta(consulta) {
+  const consultaNorm = normalizarTexto(consulta);
+  let mejor = null;
+  let mejorPuntaje = 0;
+  rutasAsistente.forEach(ruta => {
+    let puntaje = 0;
+    ruta.palabras.forEach(palabra => {
+      if (consultaNorm.includes(normalizarTexto(palabra))) puntaje += palabra.split(' ').length;
+    });
+    if (puntaje > mejorPuntaje) {
+      mejorPuntaje = puntaje;
+      mejor = ruta;
+    }
+  });
+  return mejor;
+}
+
+function detectarGrado(consulta) {
+  const match = consulta.match(/(\d)\s*(er|do|to|vo)?\s*(grado|año|primaria|secundaria)/i);
+  return match ? match[1] : null;
+}
+
+const mensajesDiv = document.getElementById('mensajesAsistente');
+const panel = document.getElementById('panelAsistente');
+const chipsDiv = document.getElementById('chipsAsistente');
+
+function agregarMensaje(texto, tipo, enlace) {
+  const div = document.createElement('div');
+  div.className = 'mensaje ' + tipo;
+  div.innerHTML = texto + (enlace ? `<br><a class="enlaceResultado" href="${enlace.url}">${enlace.emoji} Ir a ${enlace.etiqueta}</a>` : '');
+  mensajesDiv.appendChild(div);
+  mensajesDiv.scrollTop = mensajesDiv.scrollHeight;
+}
+
+function responderConsulta(consulta) {
+  agregarMensaje(consulta, 'usuario');
+  const ruta = buscarMejorRuta(consulta);
+  const grado = detectarGrado(consulta);
+
+  setTimeout(() => {
+    if (ruta) {
+      let extra = grado ? ` Si buscas ${grado}° grado, ahí mismo puedes elegirlo en el menú de la página.` : '';
+      agregarMensaje(`¡Encontré justo lo que buscas!${extra}`, 'bot', ruta);
+    } else {
+      agregarMensaje('No estoy seguro de encontrar exactamente eso, pero aquí tienes las secciones principales para explorar:', 'bot');
+      mostrarChipsPrincipales();
+    }
+  }, 350);
+}
+
+function mostrarChipsPrincipales() {
+  chipsDiv.innerHTML = '';
+  const principales = ['Colorear e Imprimir','Trazos — Aprende a Escribir','Módulo Educativo (todas las materias)','Comunidad de Padres'];
+  principales.forEach(nombre => {
+    const ruta = rutasAsistente.find(r => r.etiqueta === nombre);
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = ruta.emoji + ' ' + ruta.etiqueta;
+    chip.onclick = () => { window.location.href = ruta.url; };
+    chipsDiv.appendChild(chip);
+  });
+}
+
+document.getElementById('botonAsistente').onclick = () => {
+  panel.classList.toggle('abierto');
+  if (panel.classList.contains('abierto') && mensajesDiv.children.length === 0) {
+    agregarMensaje('¡Hola! 👋 Soy tu guía. Dime qué te gustaría hacer — por ejemplo "colorear un gato", "sumas de 2do grado" o "aprender a escribir" — y te llevo directo ahí.', 'bot');
+    mostrarChipsPrincipales();
+  }
+};
+document.getElementById('cerrarAsistente').onclick = () => panel.classList.remove('abierto');
+
+document.getElementById('formAsistente').onsubmit = (e) => {
+  e.preventDefault();
+  const input = document.getElementById('inputAsistente');
+  const valor = input.value.trim();
+  if (!valor) return;
+  chipsDiv.innerHTML = '';
+  responderConsulta(valor);
+  input.value = '';
+};
+</script>
 
 </body>
 </html>
