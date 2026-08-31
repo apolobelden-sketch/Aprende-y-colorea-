@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuaderno de Trazos - Aprende a Escribir</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: linear-gradient(180deg, #fff3e6 0%, #fef9f0 100%); margin: 0; padding: 0; color: #333; }
+  header { background: linear-gradient(135deg, #d35400, #e67e22); color: white; padding: 30px 20px 20px; }
+  header h1 { margin: 0; font-size: 28px; }
+  header p { margin: 8px 0 0; font-size: 14px; opacity: 0.95; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .volver { display: inline-block; margin-bottom: 10px; color: white; text-decoration: none; font-weight: bold; font-size: 14px; opacity: 0.9; }
+
+  .pestañas { display: flex; max-width: 560px; margin: -18px auto 0; padding: 0 16px; gap: 8px; position: relative; z-index: 5; }
+  .pestaña { flex: 1; padding: 12px 8px; border-radius: 12px 12px 0 0; border: none; background: #f1c9a0; color: #7a4a1d; font-weight: bold; font-size: 14px; cursor: pointer; }
+  .pestaña.activa { background: white; color: #d35400; }
+
+  .contenedor { max-width: 560px; margin: 0 auto 30px; padding: 0 16px; }
+  .panel { background: white; border-radius: 0 0 16px 16px; box-shadow: 0 6px 16px rgba(0,0,0,0.12); padding: 18px; margin-bottom: 16px; }
+  .panel.suelto { border-radius: 16px; margin-top: 16px; }
+  .vista { display: none; }
+  .vista.activa { display: block; }
+
+  #progresoTexto { font-size: 13px; color: #888; margin-bottom: 8px; }
+  #barraProgreso { height: 8px; background: #eee; border-radius: 6px; overflow: hidden; margin-bottom: 4px; }
+  #barraProgresoRelleno { height: 100%; background: linear-gradient(90deg, #f1c40f, #e67e22); width: 0%; transition: width 0.3s; }
+
+  .cuadriculaLetras { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .cuadriculaLetras .letraBtn { position: relative; width: 36px; height: 36px; border-radius: 10px; border: 2px solid #d35400; background: white; color: #d35400; font-size: 15px; font-weight: bold; cursor: pointer; }
+  .cuadriculaLetras .letraBtn.actual { background: #d35400; color: white; }
+  .cuadriculaLetras .letraBtn.practicada::after { content: '⭐'; position: absolute; top: -8px; right: -8px; font-size: 12px; }
+
+  .categorias { margin: 10px 0; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+  .categorias button { padding: 9px 14px; border-radius: 8px; border: none; background: #95a5a6; color: white; font-size: 13px; cursor: pointer; }
+  .categorias button.activa { background: #d35400; }
+
+  #palabraActual, #letraActualTexto { font-size: 20px; color: #888; margin: 6px 0 12px; }
+  .lienzoContenedor { display: inline-block; border-radius: 12px; background: #fafafa; border: 2px dashed #f0c896; overflow: hidden; max-width: 100%; }
+  canvas { cursor: crosshair; max-width: 100%; height: auto; display: block; touch-action: none; }
+
+  .botones { margin-top: 14px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .accion { padding: 10px 16px; border-radius: 10px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; color: white; }
+  .celebracion { display: none; background: linear-gradient(135deg, #f1c40f, #e67e22); color: white; border-radius: 16px; padding: 20px; font-size: 16px; font-weight: bold; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="volver" href="index.html">← Volver al inicio</a>
+  <h1>📖 Cuaderno de Trazos</h1>
+  <p>Todo para aprender a escribir en un solo lugar: letras, números y palabras.</p>
+</header>
+
+<div class="pestañas">
+  <button class="pestaña activa" id="tabLetrasBtn">✏️ Letras y Números</button>
+  <button class="pestaña" id="tabPalabrasBtn">🔤 Palabras</button>
+</div>
+
+<div class="contenedor">
+
+  <!-- ===================== VISTA: LETRAS Y NÚMEROS ===================== -->
+  <div class="vista activa" id="vistaLetras">
+
+    <div class="panel">
+      <div class="categorias">
+        <button id="btnMayus" class="activa">Mayúsculas</button>
+        <button id="btnMinus">minúsculas</button>
+        <button id="btnNumeros">Números</button>
+      </div>
+      <div class="cuadriculaLetras" id="cuadriculaLetras"></div>
+    </div>
+
+    <div class="panel">
+      <p id="letraActualTexto">A</p>
+      <div class="lienzoContenedor">
+        <canvas id="lienzoLetra" width="400" height="400"></canvas>
+      </div>
+      <div class="botones">
+        <button class="accion" id="anteriorLetraBtn" style="background:#3498db;">← Anterior</button>
+        <button class="accion" id="siguienteLetraBtn" style="background:#3498db;">Siguiente →</button>
+        <button class="accion" id="limpiarLetraBtn" style="background:#e67e22;">↺ Limpiar</button>
+        <button class="accion" id="imprimirLetraBtn" style="background:#27ae60;">🖨️ Imprimir esta letra</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <p style="font-size:13px; color:#888; margin:0 0 8px;">Hoja para imprimir: la letra <strong id="letraHojaTexto">A</strong> repetida en varias filas para practicar en papel.</p>
+      <div style="overflow:auto; max-width:100%;">
+        <canvas id="lienzoHojaLetra" width="700" height="900" style="max-width:100%; height:auto; border:2px dashed #f0c896; border-radius:8px;"></canvas>
+      </div>
+      <div class="botones">
+        <button class="accion" id="imprimirHojaLetraBtn" style="background:#27ae60;">🖨️ Imprimir esta hoja</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===================== VISTA: PALABRAS ===================== -->
+  <div class="vista" id="vistaPalabras">
+
+    <div class="celebracion" id="celebracion">🏆 ¡Practicaste las 27 letras con palabras! Sigue repasando para no olvidarlas.</div>
+
+    <div class="panel">
+      <p id="progresoTexto">Progreso: 0 / 27 letras practicadas</p>
+      <div id="barraProgreso"><div id="barraProgresoRelleno"></div></div>
+      <div class="cuadriculaLetras" id="cuadriculaPalabras" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="panel">
+      <p id="palabraActual">árbol</p>
+      <div class="lienzoContenedor">
+        <canvas id="lienzoPalabra" width="700" height="300"></canvas>
+      </div>
+      <div class="botones">
+        <button class="accion" id="otraPalabraBtn" style="background:#3498db;">🔀 Otra palabra</button>
+        <button class="accion" id="aleatorioPalabraBtn" style="background:#8e44ad;">🎲 Aleatoria</button>
+        <button class="accion" id="limpiarPalabraBtn" style="background:#e67e22;">↺ Limpiar</button>
+        <button class="accion" id="imprimirPalabraBtn" style="background:#27ae60;">🖨️ Imprimir esta letra</button>
+        <button class="accion" id="planaBtn" style="background:#16a085;">📋 Generar plana (renglones)</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <p style="font-size:13px; color:#888; margin:0 0 8px;">Vista previa de la plana de la letra <strong id="letraPlanaTexto">A</strong> — cada renglón repite una palabra distinta para practicar en papel.</p>
+      <div style="overflow:auto; max-width:100%;">
+        <canvas id="lienzoPlana" width="700" height="900" style="max-width:100%; height:auto; border:2px dashed #f0c896; border-radius:8px;"></canvas>
+      </div>
+      <div class="botones">
+        <button class="accion" id="imprimirPlanaBtn" style="background:#27ae60;">🖨️ Imprimir esta plana</button>
+      </div>
+    </div>
+
+    <div class="panel" style="text-align:left;">
+      <button id="reiniciarProgresoBtn" style="background:none; border:none; color:#aaa; font-size:12px; text-decoration:underline; cursor:pointer;">Reiniciar progreso guardado</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+/* ============ CAMBIO DE PESTAÑAS ============ */
+const tabLetrasBtn = document.getElementById('tabLetrasBtn');
+const tabPalabrasBtn = document.getElementById('tabPalabrasBtn');
+const vistaLetras = document.getElementById('vistaLetras');
+const vistaPalabras = document.getElementById('vistaPalabras');
+
+tabLetrasBtn.onclick = () => {
+  tabLetrasBtn.classList.add('activa');
+  tabPalabrasBtn.classList.remove('activa');
+  vistaLetras.classList.add('activa');
+  vistaPalabras.classList.remove('activa');
+};
+tabPalabrasBtn.onclick = () => {
+  tabPalabrasBtn.classList.add('activa');
+  tabLetrasBtn.classList.remove('activa');
+  vistaPalabras.classList.add('activa');
+  vistaLetras.classList.remove('activa');
+};
+
+/* ============================================================
+   SECCIÓN 1: LETRAS Y NÚMEROS
+   ============================================================ */
+const lienzoLetra = document.getElementById('lienzoLetra');
+const ctxLetra = lienzoLetra.getContext('2d');
+const cuadriculaLetras = document.getElementById('cuadriculaLetras');
+const letraActualTexto = document.getElementById('letraActualTexto');
+
+const conjuntosLetras = {
+  mayus: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+  minus: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+  numeros: '0123456789'.split('')
+};
+
+let conjuntoActual = 'mayus';
+let indiceLetraActual = 0;
+
+function dibujarGuiaLetra() {
+  ctxLetra.clearRect(0, 0, lienzoLetra.width, lienzoLetra.height);
+  const letra = conjuntosLetras[conjuntoActual][indiceLetraActual];
+  letraActualTexto.textContent = letra;
+
+  ctxLetra.font = 'bold 320px Arial';
+  ctxLetra.textAlign = 'center';
+  ctxLetra.textBaseline = 'middle';
+  ctxLetra.lineWidth = 4;
+  ctxLetra.setLineDash([12, 10]);
+  ctxLetra.strokeStyle = '#cccccc';
+  ctxLetra.strokeText(letra, lienzoLetra.width / 2, lienzoLetra.height / 2 + 20);
+  ctxLetra.setLineDash([]);
+
+  dibujarHojaLetra();
+}
+
+function construirCuadriculaLetras() {
+  cuadriculaLetras.innerHTML = '';
+  conjuntosLetras[conjuntoActual].forEach((letra, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = letra;
+    btn.className = 'letraBtn';
+    if (i === indiceLetraActual) btn.classList.add('actual');
+    btn.onclick = () => {
+      indiceLetraActual = i;
+      dibujarGuiaLetra();
+      construirCuadriculaLetras();
+    };
+    cuadriculaLetras.appendChild(btn);
+  });
+}
+
+function cambiarCategoriaLetras(nueva, boton) {
+  conjuntoActual = nueva;
+  indiceLetraActual = 0;
+  document.querySelectorAll('.categorias button').forEach(b => b.classList.remove('activa'));
+  boton.classList.add('activa');
+  dibujarGuiaLetra();
+  construirCuadriculaLetras();
+}
+
+document.getElementById('btnMayus').onclick = (e) => cambiarCategoriaLetras('mayus', e.target);
+document.getElementById('btnMinus').onclick = (e) => cambiarCategoriaLetras('minus', e.target);
+document.getElementById('btnNumeros').onclick = (e) => cambiarCategoriaLetras('numeros', e.target);
+
+document.getElementById('anteriorLetraBtn').onclick = () => {
+  indiceLetraActual = (indiceLetraActual - 1 + conjuntosLetras[conjuntoActual].length) % conjuntosLetras[conjuntoActual].length;
+  dibujarGuiaLetra();
+  construirCuadriculaLetras();
+};
+document.getElementById('siguienteLetraBtn').onclick = () => {
+  indiceLetraActual = (indiceLetraActual + 1) % conjuntosLetras[conjuntoActual].length;
+  dibujarGuiaLetra();
+  construirCuadriculaLetras();
+};
+document.getElementById('limpiarLetraBtn').onclick = dibujarGuiaLetra;
+
+document.getElementById('imprimirLetraBtn').onclick = () => {
+  const ventana = window.open('');
+  ventana.document.write('<img src="' + lienzoLetra.toDataURL() + '" style="width:100%">');
+  ventana.print();
+};
+
+// Trazo con el dedo/mouse sobre la letra
+let dibujandoLetra = false;
+let ultimoPuntoLetra = null;
+
+function obtenerPosicion(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  const escalaX = canvas.width / rect.width;
+  const escalaY = canvas.height / rect.height;
+  const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: (clienteX - rect.left) * escalaX,
+    y: (clienteY - rect.top) * escalaY
+  };
+}
+
+lienzoLetra.addEventListener('pointerdown', (e) => {
+  dibujandoLetra = true;
+  ultimoPuntoLetra = obtenerPosicion(lienzoLetra, e);
+});
+lienzoLetra.addEventListener('pointermove', (e) => {
+  if (!dibujandoLetra) return;
+  const pos = obtenerPosicion(lienzoLetra, e);
+  ctxLetra.strokeStyle = '#3498db';
+  ctxLetra.lineWidth = 10;
+  ctxLetra.lineCap = 'round';
+  ctxLetra.lineJoin = 'round';
+  ctxLetra.beginPath();
+  ctxLetra.moveTo(ultimoPuntoLetra.x, ultimoPuntoLetra.y);
+  ctxLetra.lineTo(pos.x, pos.y);
+  ctxLetra.stroke();
+  ultimoPuntoLetra = pos;
+});
+lienzoLetra.addEventListener('pointerup', () => { dibujandoLetra = false; });
+lienzoLetra.addEventListener('pointerleave', () => { dibujandoLetra = false; });
+
+// Hoja imprimible: la letra actual repetida en varias filas
+function dibujarHojaLetra() {
+  const canvasH = document.getElementById('lienzoHojaLetra');
+  const ctxH = canvasH.getContext('2d');
+  ctxH.clearRect(0, 0, canvasH.width, canvasH.height);
+  const letra = conjuntosLetras[conjuntoActual][indiceLetraActual];
+  document.getElementById('letraHojaTexto').textContent = letra;
+
+  ctxH.fillStyle = '#d35400';
+  ctxH.font = 'bold 30px Arial';
+  ctxH.textAlign = 'center';
+  ctxH.fillText('Practica la letra: ' + letra, canvasH.width / 2, 45);
+  ctxH.font = '16px Arial';
+  ctxH.fillStyle = '#888';
+  ctxH.fillText('Nombre: ______________________     Fecha: __________', canvasH.width / 2, 75);
+
+  const filas = 6, columnas = 5;
+  const inicioY = 130;
+  const altoFila = (canvasH.height - inicioY - 30) / filas;
+  const anchoColumna = canvasH.width / columnas;
+
+  ctxH.textBaseline = 'middle';
+
+  for (let f = 0; f < filas; f++) {
+    const y = inicioY + f * altoFila + altoFila / 2;
+    ctxH.strokeStyle = '#ddd';
+    ctxH.lineWidth = 1;
+    ctxH.setLineDash([]);
+    ctxH.beginPath();
+    ctxH.moveTo(30, y + altoFila * 0.3);
+    ctxH.lineTo(canvasH.width - 30, y + altoFila * 0.3);
+    ctxH.stroke();
+
+    for (let c = 0; c < columnas; c++) {
+      const x = anchoColumna * c + anchoColumna / 2;
+      ctxH.font = `bold ${Math.floor(altoFila * 0.75)}px Arial`;
+      ctxH.textAlign = 'center';
+      if (c === 0) {
+        ctxH.setLineDash([]);
+        ctxH.fillStyle = '#d35400';
+        ctxH.fillText(letra, x, y);
+      } else {
+        ctxH.setLineDash([8, 6]);
+        ctxH.lineWidth = 2;
+        ctxH.strokeStyle = '#bbbbbb';
+        ctxH.strokeText(letra, x, y);
+      }
+    }
+  }
+  ctxH.setLineDash([]);
+}
+
+document.getElementById('imprimirHojaLetraBtn').onclick = () => {
+  const canvasH = document.getElementById('lienzoHojaLetra');
+  const ventana = window.open('');
+  ventana.document.write('<img src="' + canvasH.toDataURL() + '" style="width:100%">');
+  ventana.print();
+};
+
+/* ============================================================
+   SECCIÓN 2: PALABRAS
+   ============================================================ */
+const lienzoPalabra = document.getElementById('lienzoPalabra');
+const ctxPalabra = lienzoPalabra.getContext('2d');
+const cuadriculaPalabras = document.getElementById('cuadriculaPalabras');
+const palabraActualTexto = document.getElementById('palabraActual');
+
+const bancoPalabras = {
+  a: ['árbol','avión','araña','abeja','anillo'],
+  b: ['barco','bota','banana','ballena','bicicleta'],
+  c: ['casa','carro','conejo','cielo','camión'],
+  d: ['dado','delfín','dedo','domingo','doctor'],
+  e: ['elefante','escuela','estrella','espejo','erizo'],
+  f: ['flor','foca','fresa','foco','fantasma'],
+  g: ['gato','globo','guitarra','gallina','gorra'],
+  h: ['helado','hormiga','huevo','hoja','hospital'],
+  i: ['iglesia','isla','imán','insecto','iguana'],
+  j: ['jirafa','jardín','jabón','juguete','jaula'],
+  k: ['kilo','koala'],
+  l: ['luna','león','libro','lápiz','luz'],
+  m: ['mesa','mariposa','mono','manzana','mochila'],
+  n: ['nube','nido','naranja','nariz','nieve'],
+  o: ['oso','ojo','oveja','olla','oruga'],
+  p: ['pato','perro','pelota','pescado','payaso'],
+  q: ['queso','quince'],
+  r: ['ratón','rana','robot','radio','regalo'],
+  s: ['sol','silla','serpiente','sombrero','sandía'],
+  t: ['tren','tortuga','taza','tigre','tambor'],
+  u: ['uva','uña','unicornio','uniforme','universo'],
+  v: ['vaca','vela','ventana','violín','vestido'],
+  w: ['wafle'],
+  x: ['xilófono'],
+  y: ['yoyo','yate'],
+  z: ['zapato','zorro','zanahoria','zoológico']
+};
+
+const letrasPalabras = Object.keys(bancoPalabras);
+let letraActualPalabra = 'a';
+let palabraActual = bancoPalabras['a'][0];
+let yaTrazoAlgo = false;
+
+function cargarProgreso() {
+  try { return JSON.parse(localStorage.getItem('trazosProgreso') || '[]'); }
+  catch (e) { return []; }
+}
+function guardarProgreso(letra) {
+  const progreso = cargarProgreso();
+  if (!progreso.includes(letra)) {
+    progreso.push(letra);
+    localStorage.setItem('trazosProgreso', JSON.stringify(progreso));
+  }
+  actualizarBarraProgreso();
+}
+function actualizarBarraProgreso() {
+  const progreso = cargarProgreso();
+  const pct = Math.round((progreso.length / letrasPalabras.length) * 100);
+  document.getElementById('progresoTexto').textContent = `Progreso: ${progreso.length} / ${letrasPalabras.length} letras practicadas`;
+  document.getElementById('barraProgresoRelleno').style.width = pct + '%';
+  document.getElementById('celebracion').style.display = progreso.length >= letrasPalabras.length ? 'block' : 'none';
+}
+
+function elegirPalabraAlAzar(letra) {
+  const lista = bancoPalabras[letra];
+  return lista[Math.floor(Math.random() * lista.length)];
+}
+
+function dibujarPalabra() {
+  ctxPalabra.clearRect(0, 0, lienzoPalabra.width, lienzoPalabra.height);
+  palabraActualTexto.textContent = palabraActual;
+  yaTrazoAlgo = false;
+
+  const primera = palabraActual[0];
+  const resto = palabraActual.slice(1);
+
+  ctxPalabra.textAlign = 'left';
+  ctxPalabra.textBaseline = 'middle';
+
+  ctxPalabra.font = 'bold 170px Arial';
+  const anchoPrimera = ctxPalabra.measureText(primera).width;
+  ctxPalabra.font = 'bold 70px Arial';
+  const anchoResto = ctxPalabra.measureText(resto).width;
+
+  const anchoTotal = anchoPrimera + anchoResto;
+  let x = (lienzoPalabra.width - anchoTotal) / 2;
+  const y = lienzoPalabra.height / 2;
+
+  ctxPalabra.font = 'bold 170px Arial';
+  ctxPalabra.setLineDash([10, 8]);
+  ctxPalabra.lineWidth = 4;
+  ctxPalabra.strokeStyle = '#d9b38c';
+  ctxPalabra.strokeText(primera, x, y);
+  ctxPalabra.setLineDash([]);
+
+  x += anchoPrimera;
+  ctxPalabra.font = 'bold 70px Arial';
+  ctxPalabra.fillStyle = '#d35400';
+  ctxPalabra.fillText(resto, x, y);
+}
+
+function construirCuadriculaPalabras() {
+  cuadriculaPalabras.innerHTML = '';
+  const progreso = cargarProgreso();
+  letrasPalabras.forEach((letra) => {
+    const btn = document.createElement('button');
+    btn.textContent = letra.toUpperCase();
+    btn.className = 'letraBtn';
+    if (letra === letraActualPalabra) btn.classList.add('actual');
+    if (progreso.includes(letra)) btn.classList.add('practicada');
+    btn.onclick = () => {
+      letraActualPalabra = letra;
+      palabraActual = elegirPalabraAlAzar(letra);
+      dibujarPalabra();
+      dibujarPlana();
+      construirCuadriculaPalabras();
+    };
+    cuadriculaPalabras.appendChild(btn);
+  });
+}
+
+function dibujarPlana() {
+  const canvasP = document.getElementById('lienzoPlana');
+  const ctxP = canvasP.getContext('2d');
+  ctxP.clearRect(0, 0, canvasP.width, canvasP.height);
+  document.getElementById('letraPlanaTexto').textContent = letraActualPalabra.toUpperCase();
+
+  ctxP.textAlign = 'center';
+  ctxP.fillStyle = '#d35400';
+  ctxP.font = 'bold 28px Arial';
+  ctxP.fillText('Plana de práctica — letra ' + letraActualPalabra.toUpperCase(), canvasP.width / 2, 40);
+  ctxP.font = '14px Arial';
+  ctxP.fillStyle = '#888';
+  ctxP.fillText('Nombre: ______________________     Fecha: __________', canvasP.width / 2, 68);
+
+  const palabras = bancoPalabras[letraActualPalabra];
+  const inicioY = 110;
+  const altoRenglon = (canvasP.height - inicioY - 20) / palabras.length;
+  const repeticiones = 6;
+
+  ctxP.textBaseline = 'middle';
+  ctxP.textAlign = 'left';
+
+  palabras.forEach((palabra, i) => {
+    const y = inicioY + i * altoRenglon + altoRenglon / 2;
+
+    ctxP.setLineDash([]);
+    ctxP.strokeStyle = '#ddd';
+    ctxP.lineWidth = 1;
+    ctxP.beginPath();
+    ctxP.moveTo(20, y + altoRenglon * 0.28);
+    ctxP.lineTo(canvasP.width - 20, y + altoRenglon * 0.28);
+    ctxP.stroke();
+
+    let tam = Math.floor(altoRenglon * 0.55);
+    ctxP.font = `bold ${tam}px Arial`;
+    let anchoPalabra = ctxP.measureText(palabra + ' ').width;
+    while (anchoPalabra * repeticiones > canvasP.width - 40 && tam > 10) {
+      tam -= 2;
+      ctxP.font = `bold ${tam}px Arial`;
+      anchoPalabra = ctxP.measureText(palabra + ' ').width;
+    }
+
+    let x = 20;
+    for (let r = 0; r < repeticiones; r++) {
+      if (r === 0) {
+        ctxP.setLineDash([]);
+        ctxP.fillStyle = '#d35400';
+        ctxP.fillText(palabra, x, y);
+      } else {
+        ctxP.setLineDash([6, 5]);
+        ctxP.lineWidth = 1.5;
+        ctxP.strokeStyle = '#bbbbbb';
+        ctxP.strokeText(palabra, x, y);
+      }
+      x += anchoPalabra;
+    }
+  });
+  ctxP.setLineDash([]);
+}
+
+document.getElementById('planaBtn').onclick = dibujarPlana;
+document.getElementById('imprimirPlanaBtn').onclick = () => {
+  const canvasP = document.getElementById('lienzoPlana');
+  const ventana = window.open('');
+  ventana.document.write('<img src="' + canvasP.toDataURL() + '" style="width:100%">');
+  ventana.print();
+};
+
+document.getElementById('otraPalabraBtn').onclick = () => {
+  palabraActual = elegirPalabraAlAzar(letraActualPalabra);
+  dibujarPalabra();
+};
+
+document.getElementById('aleatorioPalabraBtn').onclick = () => {
+  letraActualPalabra = letrasPalabras[Math.floor(Math.random() * letrasPalabras.length)];
+  palabraActual = elegirPalabraAlAzar(letraActualPalabra);
+  dibujarPalabra();
+  dibujarPlana();
+  construirCuadriculaPalabras();
+};
+
+document.getElementById('limpiarPalabraBtn').onclick = dibujarPalabra;
+
+document.getElementById('imprimirPalabraBtn').onclick = () => {
+  const ventana = window.open('');
+  ventana.document.write('<img src="' + lienzoPalabra.toDataURL() + '" style="width:100%">');
+  ventana.print();
+};
+
+document.getElementById('reiniciarProgresoBtn').onclick = () => {
+  localStorage.removeItem('trazosProgreso');
+  actualizarBarraProgreso();
+  construirCuadriculaPalabras();
+};
+
+let dibujandoPalabra = false;
+let ultimoPuntoPalabra = null;
+
+lienzoPalabra.addEventListener('pointerdown', (e) => {
+  dibujandoPalabra = true;
+  ultimoPuntoPalabra = obtenerPosicion(lienzoPalabra, e);
+});
+lienzoPalabra.addEventListener('pointermove', (e) => {
+  if (!dibujandoPalabra) return;
+  yaTrazoAlgo = true;
+  const pos = obtenerPosicion(lienzoPalabra, e);
+  ctxPalabra.strokeStyle = '#3498db';
+  ctxPalabra.lineWidth = 8;
+  ctxPalabra.lineCap = 'round';
+  ctxPalabra.lineJoin = 'round';
+  ctxPalabra.beginPath();
+  ctxPalabra.moveTo(ultimoPuntoPalabra.x, ultimoPuntoPalabra.y);
+  ctxPalabra.lineTo(pos.x, pos.y);
+  ctxPalabra.stroke();
+  ultimoPuntoPalabra = pos;
+});
+lienzoPalabra.addEventListener('pointerup', () => {
+  dibujandoPalabra = false;
+  if (yaTrazoAlgo) {
+    guardarProgreso(letraActualPalabra);
+    construirCuadriculaPalabras();
+  }
+});
+lienzoPalabra.addEventListener('pointerleave', () => { dibujandoPalabra = false; });
+
+/* ============ INICIO ============ */
+dibujarGuiaLetra();
+construirCuadriculaLetras();
+
+dibujarPalabra();
+construirCuadriculaPalabras();
+actualizarBarraProgreso();
+dibujarPlana();
+</script>
+
+</body>
+</html>
