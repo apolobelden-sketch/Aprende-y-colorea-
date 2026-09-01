@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aprende y Colorea - Educación Interactiva Gratis</title>
+<meta name="description" content="Plataforma educativa gratuita de primaria y secundaria con ejercicios interactivos, más dibujos para colorear e imprimir en línea.">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background: linear-gradient(180deg, #fff3e6 0%, #fef9f0 100%); margin: 0; padding: 0; color: #333; }
+  header { background: linear-gradient(135deg, #d35400, #e67e22); color: white; padding: 45px 20px 60px; }
+  header h1 { margin: 0; font-size: 34px; }
+  header p { margin: 10px 0 0; font-size: 17px; opacity: 0.95; }
+  .contenedor { max-width: 700px; margin: -30px auto 30px; padding: 0 20px; }
+  .tarjeta { display: block; background: white; border-radius: 16px; padding: 28px; margin-bottom: 20px; text-decoration: none; color: #333; box-shadow: 0 6px 16px rgba(0,0,0,0.12); transition: transform 0.15s, box-shadow 0.15s; }
+  .tarjeta:hover { transform: translateY(-4px); box-shadow: 0 10px 22px rgba(0,0,0,0.15); }
+  .tarjeta h2 { color: #d35400; margin: 10px 0 6px; font-size: 22px; }
+  .tarjeta p { margin: 0; color: #777; font-size: 15px; }
+  .emoji { font-size: 44px; }
+  .tarjeta.educacion { border-top: 5px solid #3498db; }
+  .tarjeta.colorear { border-top: 5px solid #d35400; }
+  .tarjeta.comentarios { border-top: 5px solid #16a085; }
+  .tarjeta.trazos { border-top: 5px solid #3498db; }
+  .tarjeta.libros { border-top: 5px solid #8e44ad; }
+  .recomendado { max-width: 700px; margin: 30px auto; padding: 0 20px; text-align: left; }
+  .recomendado h3 { color: #d35400; font-size: 18px; }
+  .caja-afiliado { background: white; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); text-decoration: none; color: #333; margin-bottom: 15px; }
+  .caja-afiliado span.icono { font-size: 30px; }
+  .caja-afiliado .texto strong { display: block; color: #d35400; }
+  .caja-afiliado .texto small { color: #888; }
+  footer { margin-top: 40px; padding: 25px; color: #999; font-size: 13px; }
+
+  /* Asistente de navegación */
+  #botonAsistente { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #d35400, #e67e22); color: white; border: none; font-size: 26px; cursor: pointer; box-shadow: 0 6px 16px rgba(0,0,0,0.25); z-index: 1000; }
+  #panelAsistente { position: fixed; bottom: 90px; right: 20px; width: 320px; max-width: 90vw; max-height: 70vh; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); display: none; flex-direction: column; overflow: hidden; z-index: 1000; }
+  #panelAsistente.abierto { display: flex; }
+  #cabezaAsistente { background: linear-gradient(135deg, #d35400, #e67e22); color: white; padding: 14px; text-align: left; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+  #cerrarAsistente { background: none; border: none; color: white; font-size: 18px; cursor: pointer; }
+  #mensajesAsistente { flex: 1; overflow-y: auto; padding: 12px; text-align: left; background: #fef9f0; }
+  .mensaje { max-width: 85%; padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 14px; line-height: 1.4; }
+  .mensaje.bot { background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.08); border-bottom-left-radius: 2px; }
+  .mensaje.usuario { background: #d35400; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
+  .mensaje a.enlaceResultado { display: inline-block; margin-top: 6px; background: #27ae60; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: bold; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; background: #fef9f0; }
+  .chip { background: white; border: 1px solid #d35400; color: #d35400; border-radius: 20px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  #formAsistente { display: flex; border-top: 1px solid #eee; }
+  #inputAsistente { flex: 1; border: none; padding: 12px; font-size: 14px; outline: none; }
+  #enviarAsistente { background: #d35400; color: white; border: none; padding: 0 16px; cursor: pointer; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 Aprende y Colorea</h1>
+  <p>Educación primaria y secundaria interactiva, más dibujos para colorear e imprimir gratis</p>
+</header>
+
+<div class="contenedor">
+
+  <a class="tarjeta educacion" href="educacion/index.html">
+    <div class="emoji">📚</div>
+    <h2>Módulo Educativo</h2>
+    <p>Matemáticas, Español y Ciencias — primaria y secundaria, con ejercicios interactivos y puntaje</p>
+  </a>
+
+  <a class="tarjeta colorear" href="colorear.html">
+    <div class="emoji">🎨</div>
+    <h2>Colorear e Imprimir</h2>
+    <p>Escribe una palabra, genera un dibujo y coloréalo en línea o imprímelo, o sube el tuyo</p>
+  </a>
+
+  <a class="tarjeta trazos" href="trazos.html">
+    <div class="emoji">📖</div>
+    <h2>Cuaderno de Trazos</h2>
+    <p>Letras, números y palabras — practica en pantalla o imprime tu hoja de práctica</p>
+  </a>
+
+  <a class="tarjeta libros" href="https://libros.conaliteg.gob.mx/" target="_blank" rel="noopener">
+    <div class="emoji">📖</div>
+    <h2>Libros de Texto Gratuitos (SEP)</h2>
+    <p>Consulta o descarga los libros oficiales de primaria y secundaria, gratis del gobierno de México</p>
+  </a>
+
+  <a class="tarjeta comentarios" href="comentarios.html">
+    <div class="emoji">💬</div>
+    <h2>Comunidad de Padres</h2>
+    <p>Deja un comentario o aporte educativo, revisado antes de publicarse</p>
+  </a>
+
+</div>
+
+<div class="recomendado">
+  <h3>🖍️ ¿Vas a imprimir tus dibujos?</h3>
+  <a class="caja-afiliado" href="TU_ENLACE_DE_MERCADO_LIBRE_AQUI" target="_blank" rel="noopener">
+    <span class="icono">🖨️</span>
+    <div class="texto">
+      <strong>Consigue colores y hojas para imprimir</strong>
+      <small>Ver opciones en Mercado Libre</small>
+    </div>
+  </a>
+
+  <h3>🎥 Míranos en YouTube</h3>
+  <a class="caja-afiliado" href="https://www.youtube.com/channel/UC7VOo8nlwERziFajtcDPMQg" target="_blank" rel="noopener">
+    <span class="icono">▶️</span>
+    <div class="texto">
+      <strong>Suscríbete a nuestro canal</strong>
+      <small>Videos y tutoriales para aprender jugando</small>
+    </div>
+  </a>
+</div>
+
+<footer>
+  © 2026 Aprende y Colorea — Hecho con ❤️ para niños que aprenden jugando
+</footer>
+
+<!-- Asistente de navegación inteligente -->
+<button id="botonAsistente" title="¿Qué buscas?">💬</button>
+<div id="panelAsistente">
+  <div id="cabezaAsistente">
+    <span>🧭 ¿Qué buscas hoy?</span>
+    <button id="cerrarAsistente">✕</button>
+  </div>
+  <div id="mensajesAsistente"></div>
+  <div class="chips" id="chipsAsistente"></div>
+  <form id="formAsistente">
+    <input type="text" id="inputAsistente" placeholder="Ej: colorear un gato, sumas de 3er grado...">
+    <button type="submit" id="enviarAsistente">➤</button>
+  </form>
+</div>
+
+<script>
+const rutasAsistente = [
+  { etiqueta: 'Colorear e Imprimir', url: 'colorear.html', emoji: '🎨',
+    palabras: ['colorear','pintar','pintura','dibujo','dibujar','dibujos','gato','perro','animal','imagen','cuadro','colores'] },
+  { etiqueta: 'Cuaderno de Trazos', url: 'trazos.html', emoji: '📖',
+    palabras: ['trazo','trazos','letra','letras','abecedario','alfabeto','numero','numeros','escribir','punteada','puntitos','palabra','palabras','caligrafia','plana','planas','renglon','renglones'] },
+  { etiqueta: 'Matemáticas Primaria (quiz)', url: 'educacion/primaria/matematicas.html', emoji: '➕',
+    palabras: ['matematicas primaria','suma','sumas','resta','restas','multiplicacion','division','quiz matematicas'] },
+  { etiqueta: 'Español Primaria (quiz)', url: 'educacion/primaria/espanol.html', emoji: '📝',
+    palabras: ['español primaria','ortografia','sinonimo','sinonimos','antonimo','gramatica'] },
+  { etiqueta: 'Matemáticas — Hojas para imprimir (Primaria)', url: 'educacion/imprimir-matematicas.html', emoji: '🖨️',
+    palabras: ['imprimir matematicas','hoja matematicas','hoja de sumas','ejercicios para imprimir'] },
+  { etiqueta: 'Español — Hojas para imprimir (Primaria)', url: 'educacion/imprimir-espanol.html', emoji: '🖨️',
+    palabras: ['imprimir español','hoja español','hoja de escritura'] },
+  { etiqueta: 'Matemáticas Secundaria (quiz)', url: 'educacion/secundaria/matematicas.html', emoji: '📐',
+    palabras: ['matematicas secundaria','algebra','ecuacion','ecuaciones','fraccion','fracciones secundaria'] },
+  { etiqueta: 'Español Secundaria (quiz)', url: 'educacion/secundaria/espanol.html', emoji: '📝',
+    palabras: ['español secundaria','literatura','redaccion'] },
+  { etiqueta: 'Ciencias Secundaria (quiz)', url: 'educacion/secundaria/ciencias.html', emoji: '🔬',
+    palabras: ['ciencias','biologia','fisica','quimica','naturaleza'] },
+  { etiqueta: 'Módulo Educativo (todas las materias)', url: 'educacion/index.html', emoji: '📚',
+    palabras: ['tarea','tareas','escuela','tarea escolar','materias','tarea de matematicas','estudiar'] },
+  { etiqueta: 'Libros de Texto Gratuitos (SEP)', url: 'https://libros.conaliteg.gob.mx/', emoji: '📖',
+    palabras: ['libro','libros','libro de texto','leer','lectura'] },
+  { etiqueta: 'Comunidad de Padres', url: 'comentarios.html', emoji: '💬',
+    palabras: ['comentario','comentarios','opinion','sugerencia','contactar','mensaje'] }
+];
+
+function normalizarTexto(t) {
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function buscarMejorRuta(consulta) {
+  const consultaNorm = normalizarTexto(consulta);
+  let mejor = null;
+  let mejorPuntaje = 0;
+  rutasAsistente.forEach(ruta => {
+    let puntaje = 0;
+    ruta.palabras.forEach(palabra => {
+      if (consultaNorm.includes(normalizarTexto(palabra))) puntaje += palabra.split(' ').length;
+    });
+    if (puntaje > mejorPuntaje) {
+      mejorPuntaje = puntaje;
+      mejor = ruta;
+    }
+  });
+  return mejor;
+}
+
+function detectarGrado(consulta) {
+  const match = consulta.match(/(\d)\s*(er|do|to|vo)?\s*(grado|año|primaria|secundaria)/i);
+  return match ? match[1] : null;
+}
+
+const mensajesDiv = document.getElementById('mensajesAsistente');
+const panel = document.getElementById('panelAsistente');
+const chipsDiv = document.getElementById('chipsAsistente');
+
+function agregarMensaje(texto, tipo, enlace) {
+  const div = document.createElement('div');
+  div.className = 'mensaje ' + tipo;
+  div.innerHTML = texto + (enlace ? `<br><a class="enlaceResultado" href="${enlace.url}">${enlace.emoji} Ir a ${enlace.etiqueta}</a>` : '');
+  mensajesDiv.appendChild(div);
+  mensajesDiv.scrollTop = mensajesDiv.scrollHeight;
+}
+
+function responderConsulta(consulta) {
+  agregarMensaje(consulta, 'usuario');
+  const ruta = buscarMejorRuta(consulta);
+  const grado = detectarGrado(consulta);
+
+  setTimeout(() => {
+    if (ruta) {
+      let extra = grado ? ` Si buscas ${grado}° grado, ahí mismo puedes elegirlo en el menú de la página.` : '';
+      agregarMensaje(`¡Encontré justo lo que buscas!${extra}`, 'bot', ruta);
+    } else {
+      agregarMensaje('No estoy seguro de encontrar exactamente eso, pero aquí tienes las secciones principales para explorar:', 'bot');
+      mostrarChipsPrincipales();
+    }
+  }, 350);
+}
+
+function mostrarChipsPrincipales() {
+  chipsDiv.innerHTML = '';
+  const principales = ['Colorear e Imprimir','Cuaderno de Trazos','Módulo Educativo (todas las materias)','Comunidad de Padres'];
+  principales.forEach(nombre => {
+    const ruta = rutasAsistente.find(r => r.etiqueta === nombre);
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = ruta.emoji + ' ' + ruta.etiqueta;
+    chip.onclick = () => { window.location.href = ruta.url; };
+    chipsDiv.appendChild(chip);
+  });
+}
+
+document.getElementById('botonAsistente').onclick = () => {
+  panel.classList.toggle('abierto');
+  if (panel.classList.contains('abierto') && mensajesDiv.children.length === 0) {
+    agregarMensaje('¡Hola! 👋 Soy tu guía. Dime qué te gustaría hacer — por ejemplo "colorear un gato", "sumas de 2do grado" o "aprender a escribir" — y te llevo directo ahí.', 'bot');
+    mostrarChipsPrincipales();
+  }
+};
+document.getElementById('cerrarAsistente').onclick = () => panel.classList.remove('abierto');
+
+document.getElementById('formAsistente').onsubmit = (e) => {
+  e.preventDefault();
+  const input = document.getElementById('inputAsistente');
+  const valor = input.value.trim();
+  if (!valor) return;
+  chipsDiv.innerHTML = '';
+  responderConsulta(valor);
+  input.value = '';
+};
+</script>
+
+</body>
+</html>
